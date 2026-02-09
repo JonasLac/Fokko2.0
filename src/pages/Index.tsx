@@ -1,14 +1,30 @@
 import { useState, useEffect, useMemo } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Plus, X } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import TaskCategoryCard from "@/components/TaskCategoryCard";
-import { categories, loadTasks, saveTasks, motivationalQuotes, type Task, type CategoryId } from "@/lib/fokko-data";
+import {
+  getAllCategories,
+  loadTasks,
+  saveTasks,
+  saveCompletionSnapshot,
+  motivationalQuotes,
+  saveCustomCategory,
+  getCustomColorOptions,
+  type Task,
+  type CategoryId,
+  type Category,
+} from "@/lib/fokko-data";
 
 const Index = () => {
   const [tasks, setTasks] = useState<Task[]>(loadTasks);
+  const [allCategories, setAllCategories] = useState<Category[]>(getAllCategories);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatColor, setNewCatColor] = useState(getCustomColorOptions()[0].hsl);
 
   useEffect(() => {
     saveTasks(tasks);
+    saveCompletionSnapshot(tasks);
   }, [tasks]);
 
   const completedCount = tasks.filter((t) => t.completed).length;
@@ -50,6 +66,15 @@ const Index = () => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
+  const handleAddCategory = () => {
+    if (newCatName.trim()) {
+      const cat = saveCustomCategory(newCatName.trim(), newCatColor);
+      setAllCategories((prev) => [...prev, cat]);
+      setNewCatName("");
+      setShowAddCategory(false);
+    }
+  };
+
   // Focus history
   const todayFocus = (() => {
     try {
@@ -59,6 +84,11 @@ const Index = () => {
       return history.find((s: any) => s.date === today)?.minutes || 0;
     } catch { return 0; }
   })();
+
+  // Circular progress
+  const circleRadius = 44;
+  const circumference = 2 * Math.PI * circleRadius;
+  const strokeDashoffset = circumference * (1 - completionPercent / 100);
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -72,22 +102,44 @@ const Index = () => {
         {/* Progress Overview */}
         <div className="fokko-card mb-6 p-5 fade-up">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="text-3xl font-bold text-gradient">{completionPercent}%</div>
-              <p className="text-xs text-muted-foreground">
-                {completedCount}/{totalCount} tarefas concluídas
-              </p>
+            <div className="flex items-center gap-4">
+              {/* Circular progress */}
+              <div className="relative h-24 w-24 shrink-0">
+                <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
+                  <circle
+                    cx="50" cy="50" r={circleRadius}
+                    fill="none"
+                    stroke="hsl(220 18% 18%)"
+                    strokeWidth="7"
+                  />
+                  <circle
+                    cx="50" cy="50" r={circleRadius}
+                    fill="none"
+                    stroke={completionPercent === 100 ? "hsl(142 70% 45%)" : "hsl(210 80% 55%)"}
+                    strokeWidth="7"
+                    strokeLinecap="round"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDashoffset}
+                    className="transition-all duration-700"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-bold text-gradient">{completionPercent}%</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  {completedCount}/{totalCount} tarefas concluídas
+                </p>
+                {completionPercent === 100 && totalCount > 0 && (
+                  <p className="mt-1 text-xs text-success font-medium">🎉 Tudo concluído!</p>
+                )}
+              </div>
             </div>
             <div className="text-right">
               <div className="text-lg font-semibold text-foreground">{todayFocus}min</div>
               <p className="text-xs text-muted-foreground">tempo de foco</p>
             </div>
-          </div>
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-secondary">
-            <div
-              className="progress-bar-animate h-full rounded-full fokko-gradient"
-              style={{ width: `${completionPercent}%` }}
-            />
           </div>
         </div>
 
@@ -99,16 +151,62 @@ const Index = () => {
 
         {/* Task Categories */}
         <div className="space-y-4">
-          {categories.map((cat) => (
+          {allCategories.map((cat) => (
             <TaskCategoryCard
               key={cat.id}
-              categoryId={cat.id}
+              category={cat}
               tasks={tasks}
               onToggle={toggleTask}
               onAdd={addTask}
               onDelete={deleteTask}
             />
           ))}
+        </div>
+
+        {/* Add Category Button */}
+        <div className="mt-4 fade-up">
+          {!showAddCategory ? (
+            <button
+              onClick={() => setShowAddCategory(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+            >
+              <Plus size={16} />
+              Nova categoria
+            </button>
+          ) : (
+            <div className="fokko-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">Nova Categoria</h3>
+                <button onClick={() => setShowAddCategory(false)} className="text-muted-foreground hover:text-foreground">
+                  <X size={16} />
+                </button>
+              </div>
+              <input
+                autoFocus
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
+                placeholder="Nome da categoria..."
+                className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary"
+              />
+              <div className="flex gap-2">
+                {getCustomColorOptions().map((opt) => (
+                  <button
+                    key={opt.hsl}
+                    onClick={() => setNewCatColor(opt.hsl)}
+                    className={`h-7 w-7 rounded-full transition-all ${newCatColor === opt.hsl ? "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-110" : ""}`}
+                    style={{ background: `hsl(${opt.hsl})` }}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={handleAddCategory}
+                className="w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground"
+              >
+                Criar categoria
+              </button>
+            </div>
+          )}
         </div>
       </div>
       <BottomNav />

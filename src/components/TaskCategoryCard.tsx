@@ -1,28 +1,29 @@
 import { useState } from "react";
 import { Check, Plus, Trash2 } from "lucide-react";
-import { categories, type Task, type CategoryId } from "@/lib/fokko-data";
+import type { Task, CategoryId, Category } from "@/lib/fokko-data";
 
 interface TaskCategoryCardProps {
-  categoryId: CategoryId;
+  category: Category;
   tasks: Task[];
   onToggle: (id: string) => void;
   onAdd: (title: string, category: CategoryId) => void;
   onDelete: (id: string) => void;
 }
 
-const TaskCategoryCard = ({ categoryId, tasks, onToggle, onAdd, onDelete }: TaskCategoryCardProps) => {
+const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete }: TaskCategoryCardProps) => {
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
 
-  const category = categories.find((c) => c.id === categoryId)!;
-  const categoryTasks = tasks.filter((t) => t.category === categoryId);
+  const categoryTasks = tasks.filter((t) => t.category === category.id);
   const completed = categoryTasks.filter((t) => t.completed).length;
   const total = categoryTasks.length;
   const progress = total > 0 ? (completed / total) * 100 : 0;
 
+  const isCustom = !!category.color;
+
   const handleAdd = () => {
     if (newTitle.trim()) {
-      onAdd(newTitle.trim(), categoryId);
+      onAdd(newTitle.trim(), category.id);
       setNewTitle("");
       setAdding(false);
     }
@@ -32,8 +33,15 @@ const TaskCategoryCard = ({ categoryId, tasks, onToggle, onAdd, onDelete }: Task
     <div className="fokko-card p-4 fade-up">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${category.bgClass}`}>
-            <category.icon size={18} className={category.colorClass} />
+          <div
+            className={`flex h-9 w-9 items-center justify-center rounded-lg ${isCustom ? "" : category.bgClass}`}
+            style={isCustom ? { background: `hsl(${category.color} / 0.15)` } : undefined}
+          >
+            <category.icon
+              size={18}
+              className={isCustom ? "" : category.colorClass}
+              style={isCustom ? { color: `hsl(${category.color})` } : undefined}
+            />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">{category.label}</h3>
@@ -51,8 +59,13 @@ const TaskCategoryCard = ({ categoryId, tasks, onToggle, onAdd, onDelete }: Task
       {/* Progress bar */}
       <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-secondary">
         <div
-          className="progress-bar-animate h-full rounded-full fokko-gradient"
-          style={{ width: `${progress}%` }}
+          className="progress-bar-animate h-full rounded-full"
+          style={{
+            width: `${progress}%`,
+            background: isCustom
+              ? `hsl(${category.color})`
+              : "linear-gradient(135deg, hsl(210 80% 55%), hsl(210 90% 40%))",
+          }}
         />
       </div>
 

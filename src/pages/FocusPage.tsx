@@ -77,6 +77,46 @@ const FocusPage = () => {
   const today = new Date().toISOString().split("T")[0];
   const todayFocus = todayHistory.find((s) => s.date === today)?.minutes || 0;
 
+  // Clean mode: when running, show only timer + pause
+  if (isRunning) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        {/* Timer Circle */}
+        <div className="relative mx-auto mb-10 flex h-72 w-72 items-center justify-center">
+          <svg className="absolute inset-0" viewBox="0 0 288 288">
+            <circle cx="144" cy="144" r="132" fill="none" stroke="hsl(220 18% 18%)" strokeWidth="5" />
+            <circle
+              cx="144"
+              cy="144"
+              r="132"
+              fill="none"
+              stroke="hsl(210 80% 55%)"
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeDasharray={2 * Math.PI * 132}
+              strokeDashoffset={2 * Math.PI * 132 * (1 - progress / 100)}
+              className="transition-all duration-1000"
+              transform="rotate(-90 144 144)"
+            />
+          </svg>
+          <div className="text-center timer-pulse">
+            <div className="text-6xl font-bold tabular-nums text-foreground">
+              {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+            </div>
+          </div>
+        </div>
+
+        {/* Pause button only */}
+        <button
+          onClick={() => setIsRunning(false)}
+          className="flex h-16 w-16 items-center justify-center rounded-full fokko-gradient text-primary-foreground shadow-lg fokko-glow transition-transform hover:scale-105"
+        >
+          <Pause size={28} />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="mx-auto max-w-md px-5 pt-10">
@@ -106,7 +146,7 @@ const FocusPage = () => {
               transform="rotate(-90 128 128)"
             />
           </svg>
-          <div className={`text-center ${isRunning ? "timer-pulse" : ""}`}>
+          <div className="text-center">
             <div className="text-5xl font-bold tabular-nums text-foreground">
               {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
             </div>
@@ -125,10 +165,10 @@ const FocusPage = () => {
             <RotateCcw size={20} />
           </button>
           <button
-            onClick={() => setIsRunning(!isRunning)}
+            onClick={() => setIsRunning(true)}
             className="flex h-16 w-16 items-center justify-center rounded-full fokko-gradient text-primary-foreground shadow-lg fokko-glow transition-transform hover:scale-105"
           >
-            {isRunning ? <Pause size={28} /> : <Play size={28} className="ml-1" />}
+            <Play size={28} className="ml-1" />
           </button>
           <button
             onClick={() => setShowGuide(!showGuide)}

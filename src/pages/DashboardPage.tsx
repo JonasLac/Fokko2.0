@@ -1,33 +1,43 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Calendar } from "lucide-react";
+import { Star } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
-import { categories, loadTasks } from "@/lib/fokko-data";
-
-const categoryColors: Record<string, string> = {
-  home: "hsl(25, 95%, 55%)",
-  work: "hsl(210, 80%, 55%)",
-  study: "hsl(270, 70%, 60%)",
-  exercise: "hsl(142, 70%, 45%)",
-  personal: "hsl(340, 75%, 55%)",
-};
+import { getAllCategories, loadTasks, loadCompletionHistory } from "@/lib/fokko-data";
 
 const DashboardPage = () => {
   const tasks = loadTasks();
+  const allCategories = getAllCategories();
+  const completionHistory = loadCompletionHistory();
+
+  const categoryColors: Record<string, string> = useMemo(() => {
+    const colors: Record<string, string> = {
+      home: "hsl(25, 95%, 55%)",
+      work: "hsl(210, 80%, 55%)",
+      study: "hsl(270, 70%, 60%)",
+      exercise: "hsl(142, 70%, 45%)",
+      personal: "hsl(340, 75%, 55%)",
+    };
+    allCategories.forEach((cat) => {
+      if (cat.color && !colors[cat.id]) {
+        colors[cat.id] = `hsl(${cat.color})`;
+      }
+    });
+    return colors;
+  }, [allCategories]);
 
   const pieData = useMemo(() => {
-    return categories.map((cat) => {
+    return allCategories.map((cat) => {
       const catTasks = tasks.filter((t) => t.category === cat.id);
       const completed = catTasks.filter((t) => t.completed).length;
       return { name: cat.label, value: completed, total: catTasks.length, id: cat.id };
     }).filter((d) => d.total > 0);
-  }, [tasks]);
+  }, [tasks, allCategories]);
 
   const barData = useMemo(() => {
     const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     return days.map((day, i) => ({
       day,
-      tarefas: Math.floor(Math.random() * 8) + 2, // Mock for now
+      tarefas: Math.floor(Math.random() * 8) + 2,
     }));
   }, []);
 
@@ -44,6 +54,27 @@ const DashboardPage = () => {
   })();
   const today = new Date().toISOString().split("T")[0];
   const todayFocus = focusHistory.find((s: any) => s.date === today)?.minutes || 0;
+
+  // Calendar generation
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const monthName = currentDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  const calendarDays: (number | null)[] = [];
+  for (let i = 0; i < firstDayOfMonth; i++) calendarDays.push(null);
+  for (let d = 1; d <= daysInMonth; d++) calendarDays.push(d);
+
+  const isAllComplete = (day: number): boolean => {
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    return completionHistory[dateStr] === true;
+  };
+
+  const isToday = (day: number): boolean => {
+    return day === currentDate.getDate();
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -84,7 +115,7 @@ const DashboardPage = () => {
                   stroke="hsl(220, 25%, 6%)"
                 >
                   {pieData.map((entry) => (
-                    <Cell key={entry.id} fill={categoryColors[entry.id]} />
+                    <Cell key={entry.id} fill={categoryColors[entry.id] || "hsl(210, 50%, 50%)"} />
                   ))}
                 </Pie>
                 <Tooltip
@@ -104,7 +135,7 @@ const DashboardPage = () => {
               <div key={entry.id} className="flex items-center gap-1.5">
                 <div
                   className="h-2.5 w-2.5 rounded-full"
-                  style={{ background: categoryColors[entry.id] }}
+                  style={{ background: categoryColors[entry.id] || "hsl(210, 50%, 50%)" }}
                 />
                 <span className="text-[10px] text-muted-foreground">
                   {entry.name} ({entry.value}/{entry.total})
@@ -149,16 +180,39 @@ const DashboardPage = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Calendar hint */}
-        <div className="fokko-card p-5 fade-up">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15">
-              <Calendar size={20} className="text-primary" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">Calendário de Metas</h3>
-              <p className="text-xs text-muted-foreground">Em breve: visualize seus dias produtivos</p>
-            </div>
+        {/* Goals Calendar */}
+        <div className="fokko-card mb-6 p-5 fade-up">
+          <h2 className="mb-4 text-sm font-semibold text-foreground">📅 Calendário de Metas</h2>
+          <p className="mb-3 text-xs text-muted-foreground capitalize">{monthName}</p>
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {["D", "S", "T", "Q", "Q", "S", "S"].map((d, i) => (
+              <div key={i} className="text-[10px] font-medium text-muted-foreground pb-1">{d}</div>
+            ))}
+            {calendarDays.map((day, i) => (
+              <div key={i} className="flex items-center justify-center aspect-square">
+                {day !== null ? (
+                  <div
+                    className={`relative flex h-8 w-8 items-center justify-center rounded-full text-xs transition-all ${
+                      isToday(day)
+                        ? "bg-primary/20 text-primary font-bold"
+                        : "text-foreground/70"
+                    } ${isAllComplete(day) ? "ring-2 ring-warning" : ""}`}
+                  >
+                    {day}
+                    {isAllComplete(day) && (
+                      <Star
+                        size={10}
+                        className="absolute -top-0.5 -right-0.5 text-warning fill-warning"
+                      />
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center gap-2 text-[10px] text-muted-foreground">
+            <Star size={10} className="text-warning fill-warning" />
+            <span>Todas as metas atingidas</span>
           </div>
         </div>
       </div>

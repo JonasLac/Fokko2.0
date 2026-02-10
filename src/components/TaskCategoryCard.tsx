@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Plus, Trash2 } from "lucide-react";
+import { Check, Plus, Trash2, X } from "lucide-react";
 import type { Task, CategoryId, Category } from "@/lib/fokko-data";
 
 interface TaskCategoryCardProps {
@@ -8,9 +8,10 @@ interface TaskCategoryCardProps {
   onToggle: (id: string) => void;
   onAdd: (title: string, category: CategoryId) => void;
   onDelete: (id: string) => void;
+  onDeleteCategory?: () => void;
 }
 
-const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete }: TaskCategoryCardProps) => {
+const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onDeleteCategory }: TaskCategoryCardProps) => {
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
 
@@ -48,12 +49,22 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete }: TaskCa
             <p className="text-xs text-muted-foreground">{completed}/{total} concluídas</p>
           </div>
         </div>
-        <button
-          onClick={() => setAdding(!adding)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          <Plus size={16} />
-        </button>
+        <div className="flex items-center gap-1">
+          {onDeleteCategory && (
+            <button
+              onClick={onDeleteCategory}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/20 hover:text-destructive"
+            >
+              <X size={14} />
+            </button>
+          )}
+          <button
+            onClick={() => setAdding(!adding)}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Progress bar */}

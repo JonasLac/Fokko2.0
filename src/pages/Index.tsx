@@ -9,14 +9,19 @@ import {
   saveCompletionSnapshot,
   motivationalQuotes,
   saveCustomCategory,
+  deleteCustomCategory,
   getCustomColorOptions,
+  checkAndResetDaily,
   type Task,
   type CategoryId,
   type Category,
 } from "@/lib/fokko-data";
 
 const Index = () => {
-  const [tasks, setTasks] = useState<Task[]>(loadTasks);
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    checkAndResetDaily();
+    return loadTasks();
+  });
   const [allCategories, setAllCategories] = useState<Category[]>(getAllCategories);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCatName, setNewCatName] = useState("");
@@ -73,6 +78,12 @@ const Index = () => {
       setNewCatName("");
       setShowAddCategory(false);
     }
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    deleteCustomCategory(categoryId);
+    setAllCategories((prev) => prev.filter((c) => c.id !== categoryId));
+    setTasks((prev) => prev.filter((t) => t.category !== categoryId));
   };
 
   // Focus history
@@ -159,6 +170,7 @@ const Index = () => {
               onToggle={toggleTask}
               onAdd={addTask}
               onDelete={deleteTask}
+              onDeleteCategory={cat.color ? () => handleDeleteCategory(cat.id) : undefined}
             />
           ))}
         </div>

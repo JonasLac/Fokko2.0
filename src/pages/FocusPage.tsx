@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { Play, Pause, RotateCcw, Info } from "lucide-react";
+import { Play, Pause, RotateCcw, Info, Trophy, Plus } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import { getFocusCycles, incrementFocusCycle } from "@/lib/fokko-data";
 
 const FOCUS_KEY = "fokko-focus-history";
 
@@ -38,6 +39,10 @@ const FocusPage = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [cyclesCompleted, setCyclesCompleted] = useState(getFocusCycles().count);
+  const [showCycleComplete, setShowCycleComplete] = useState(false);
+  const [customTime, setCustomTime] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
   const totalSeconds = goalMinutes * 60;
   const progress = ((totalSeconds - secondsLeft) / totalSeconds) * 100;
@@ -62,6 +67,11 @@ const FocusPage = () => {
           setIsRunning(false);
           setCompleted(true);
           saveFocusSession(goalMinutes);
+          const newCount = incrementFocusCycle();
+          setCyclesCompleted(newCount);
+          if (newCount >= 4) {
+            setShowCycleComplete(true);
+          }
           return 0;
         }
         return prev - 1;
@@ -76,6 +86,35 @@ const FocusPage = () => {
   const todayHistory = loadFocusHistory();
   const today = new Date().toISOString().split("T")[0];
   const todayFocus = todayHistory.find((s) => s.date === today)?.minutes || 0;
+
+  // 4 cycles complete screen
+  if (showCycleComplete) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center animate-fade-in">
+        <div className="text-center animate-scale-in">
+          <Trophy size={72} className="mx-auto mb-6 text-warning" />
+          <h2 className="text-3xl font-bold text-foreground mb-2">Foco Diário Concluído! 🎉</h2>
+          <p className="text-muted-foreground mb-2">Você completou 4 ciclos Pomodoro hoje!</p>
+          <p className="text-sm text-muted-foreground mb-8">
+            Total: {todayFocus}min de foco • Hora de uma pausa longa (15-30min)
+          </p>
+          <div className="flex gap-3 justify-center">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-10 w-10 rounded-full fokko-gradient flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">{i}</span>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowCycleComplete(false)}
+            className="mt-8 rounded-xl bg-secondary px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80"
+          >
+            Continuar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Clean mode: when running, show only timer + pause
   if (isRunning) {
@@ -184,19 +223,80 @@ const FocusPage = () => {
           <p className="mb-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Tempo de foco
           </p>
-          <div className="flex justify-center gap-3">
+          <div className="flex justify-center gap-3 flex-wrap">
             {presets.map((min) => (
               <button
                 key={min}
-                onClick={() => setGoalMinutes(min)}
+                onClick={() => { setGoalMinutes(min); setShowCustomInput(false); }}
                 className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
-                  goalMinutes === min
+                  goalMinutes === min && !showCustomInput
                     ? "fokko-gradient text-primary-foreground shadow-md"
                     : "bg-secondary text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {min}min
               </button>
+            ))}
+            <button
+              onClick={() => setShowCustomInput(!showCustomInput)}
+              className={`rounded-xl px-3 py-2 text-sm font-medium transition-all ${
+                showCustomInput
+                  ? "fokko-gradient text-primary-foreground shadow-md"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+          {showCustomInput && (
+            <div className="mt-3 flex justify-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={180}
+                value={customTime}
+                onChange={(e) => setCustomTime(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && customTime) {
+                    const val = Math.min(180, Math.max(1, parseInt(customTime)));
+                    setGoalMinutes(val);
+                    setShowCustomInput(false);
+                    setCustomTime("");
+                  }
+                }}
+                placeholder="Min..."
+                className="w-20 rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary text-center"
+              />
+              <button
+                onClick={() => {
+                  if (customTime) {
+                    const val = Math.min(180, Math.max(1, parseInt(customTime)));
+                    setGoalMinutes(val);
+                    setShowCustomInput(false);
+                    setCustomTime("");
+                  }
+                }}
+                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
+              >
+                OK
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Cycle indicators */}
+        <div className="mb-6 fade-up">
+          <p className="mb-2 text-center text-xs text-muted-foreground">
+            Ciclos hoje: {cyclesCompleted}/4
+          </p>
+          <div className="flex justify-center gap-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className={`h-3 w-3 rounded-full transition-all ${
+                  i <= cyclesCompleted ? "fokko-gradient" : "bg-secondary"
+                }`}
+              />
             ))}
           </div>
         </div>

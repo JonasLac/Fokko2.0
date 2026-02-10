@@ -30,6 +30,59 @@ export const defaultCategories: Category[] = [
 const STORAGE_KEY = "fokko-tasks";
 const CUSTOM_CATEGORIES_KEY = "fokko-custom-categories";
 const COMPLETION_HISTORY_KEY = "fokko-completion-history";
+const LAST_RESET_KEY = "fokko-last-reset";
+const FOCUS_CYCLES_KEY = "fokko-focus-cycles";
+
+// Check if tasks should be reset (new day)
+export const checkAndResetDaily = (): boolean => {
+  const today = new Date().toISOString().split("T")[0];
+  const lastReset = localStorage.getItem(LAST_RESET_KEY);
+  if (lastReset === today) return false;
+
+  // Save yesterday's snapshot before resetting
+  const tasks = loadTasks();
+  if (tasks.length > 0) {
+    saveCompletionSnapshot(tasks);
+  }
+
+  // Reset all tasks to uncompleted
+  const resetTasks = tasks.map((t) => ({ ...t, completed: false }));
+  saveTasks(resetTasks);
+
+  // Reset focus history for today
+  try {
+    const raw = localStorage.getItem("fokko-focus-history");
+    const history: { date: string; minutes: number }[] = raw ? JSON.parse(raw) : [];
+    const filtered = history.filter((s) => s.date !== today);
+    localStorage.setItem("fokko-focus-history", JSON.stringify(filtered));
+  } catch {}
+
+  // Reset focus cycles
+  localStorage.setItem(FOCUS_CYCLES_KEY, JSON.stringify({ date: today, count: 0 }));
+
+  localStorage.setItem(LAST_RESET_KEY, today);
+  return true;
+};
+
+export const getFocusCycles = (): { date: string; count: number } => {
+  try {
+    const raw = localStorage.getItem(FOCUS_CYCLES_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      const today = new Date().toISOString().split("T")[0];
+      if (data.date === today) return data;
+    }
+  } catch {}
+  return { date: new Date().toISOString().split("T")[0], count: 0 };
+};
+
+export const incrementFocusCycle = (): number => {
+  const today = new Date().toISOString().split("T")[0];
+  const current = getFocusCycles();
+  const newCount = current.date === today ? current.count + 1 : 1;
+  localStorage.setItem(FOCUS_CYCLES_KEY, JSON.stringify({ date: today, count: newCount }));
+  return newCount;
+};
 
 // Icon map for custom categories (cycle through these)
 const customIcons: LucideIcon[] = [Heart, Briefcase, BookOpen, Dumbbell, Home];

@@ -80,9 +80,9 @@ const FocusPage = () => {
   // Clean mode: when running, show only timer + pause
   if (isRunning) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center animate-fade-in">
         {/* Timer Circle */}
-        <div className="relative mx-auto mb-10 flex h-72 w-72 items-center justify-center">
+        <div className="relative mx-auto mb-10 flex h-72 w-72 items-center justify-center animate-scale-in">
           <svg className="absolute inset-0" viewBox="0 0 288 288">
             <circle cx="144" cy="144" r="132" fill="none" stroke="hsl(220 18% 18%)" strokeWidth="5" />
             <circle
@@ -109,7 +109,8 @@ const FocusPage = () => {
         {/* Pause button only */}
         <button
           onClick={() => setIsRunning(false)}
-          className="flex h-16 w-16 items-center justify-center rounded-full fokko-gradient text-primary-foreground shadow-lg fokko-glow transition-transform hover:scale-105"
+          className="flex h-16 w-16 items-center justify-center rounded-full fokko-gradient text-primary-foreground shadow-lg fokko-glow transition-transform hover:scale-105 animate-fade-in"
+          style={{ animationDelay: '0.15s', animationFillMode: 'backwards' }}
         >
           <Pause size={28} />
         </button>
@@ -118,7 +119,7 @@ const FocusPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 animate-fade-in">
       <div className="mx-auto max-w-md px-5 pt-10">
         {/* Header */}
         <div className="mb-8 text-center fade-up">

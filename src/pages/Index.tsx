@@ -105,13 +105,13 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-24">
       <div className="mx-auto max-w-md px-5 pt-10">
         {/* Header */}
-        <div className="mb-6 fade-up">
+        <div className="mb-6 fade-up stagger-1">
           <h1 className="text-2xl font-bold text-foreground">{greeting}! 👋</h1>
           <p className="mt-1 text-sm capitalize text-muted-foreground">{dateStr}</p>
         </div>
 
         {/* Progress Overview */}
-        <div className="fokko-card mb-6 p-5 fade-up">
+        <div className="fokko-card mb-6 p-5 fade-up stagger-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {/* Circular progress */}
@@ -131,7 +131,7 @@ const Index = () => {
                     strokeLinecap="round"
                     strokeDasharray={circumference}
                     strokeDashoffset={strokeDashoffset}
-                    className="transition-all duration-700"
+                    className="transition-all duration-1000 ease-out"
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -143,7 +143,7 @@ const Index = () => {
                   {completedCount}/{totalCount} tarefas concluídas
                 </p>
                 {completionPercent === 100 && totalCount > 0 && (
-                  <p className="mt-1 text-xs text-success font-medium">🎉 Tudo concluído!</p>
+                  <p className="mt-1 text-xs text-success font-medium animate-pop">🎉 Tudo concluído!</p>
                 )}
               </div>
             </div>
@@ -155,41 +155,42 @@ const Index = () => {
         </div>
 
         {/* Motivational Quote */}
-        <div className="mb-6 flex items-start gap-3 rounded-xl bg-primary/10 px-4 py-3 fade-up">
+        <div className="mb-6 flex items-start gap-3 rounded-xl bg-primary/10 px-4 py-3 fade-up stagger-3">
           <Sparkles size={16} className="mt-0.5 shrink-0 text-primary" />
           <p className="text-xs leading-relaxed text-foreground/80">{quote}</p>
         </div>
 
         {/* Task Categories */}
         <div className="space-y-4">
-          {allCategories.map((cat) => (
-            <TaskCategoryCard
-              key={cat.id}
-              category={cat}
-              tasks={tasks}
-              onToggle={toggleTask}
-              onAdd={addTask}
-              onDelete={deleteTask}
-              onDeleteCategory={cat.color ? () => handleDeleteCategory(cat.id) : undefined}
-            />
+          {allCategories.map((cat, index) => (
+            <div key={cat.id} className="slide-in-bottom" style={{ animationDelay: `${0.15 + index * 0.07}s` }}>
+              <TaskCategoryCard
+                category={cat}
+                tasks={tasks}
+                onToggle={toggleTask}
+                onAdd={addTask}
+                onDelete={deleteTask}
+                onDeleteCategory={cat.color ? () => handleDeleteCategory(cat.id) : undefined}
+              />
+            </div>
           ))}
         </div>
 
         {/* Add Category Button */}
-        <div className="mt-4 fade-up">
+        <div className="mt-4 slide-in-bottom" style={{ animationDelay: '0.35s' }}>
           {!showAddCategory ? (
             <button
               onClick={() => setShowAddCategory(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm text-muted-foreground transition-all duration-300 hover:border-primary hover:text-foreground hover:scale-[1.01] active:scale-[0.99]"
             >
               <Plus size={16} />
               Nova categoria
             </button>
           ) : (
-            <div className="fokko-card p-4 space-y-3">
+            <div className="fokko-card p-4 space-y-3 expand-in">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-foreground">Nova Categoria</h3>
-                <button onClick={() => setShowAddCategory(false)} className="text-muted-foreground hover:text-foreground">
+                <button onClick={() => setShowAddCategory(false)} className="text-muted-foreground hover:text-foreground transition-colors duration-200">
                   <X size={16} />
                 </button>
               </div>
@@ -199,21 +200,21 @@ const Index = () => {
                 onChange={(e) => setNewCatName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
                 placeholder="Nome da categoria..."
-                className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary"
+                className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors duration-200"
               />
               <div className="flex gap-2">
-                {getCustomColorOptions().map((opt) => (
+                {getCustomColorOptions().map((opt, i) => (
                   <button
                     key={opt.hsl}
                     onClick={() => setNewCatColor(opt.hsl)}
-                    className={`h-7 w-7 rounded-full transition-all ${newCatColor === opt.hsl ? "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-110" : ""}`}
+                    className={`h-7 w-7 rounded-full transition-all duration-300 ${newCatColor === opt.hsl ? "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-110" : "hover:scale-105"}`}
                     style={{ background: `hsl(${opt.hsl})` }}
                   />
                 ))}
               </div>
               <button
                 onClick={handleAddCategory}
-                className="w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground"
+                className="w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
               >
                 Criar categoria
               </button>
@@ -221,7 +222,6 @@ const Index = () => {
           )}
         </div>
       </div>
-      <BottomNav />
     </div>
   );
 };

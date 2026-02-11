@@ -79,11 +79,11 @@ const DashboardPage = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="mx-auto max-w-md px-5 pt-10">
-        <h1 className="mb-2 text-2xl font-bold text-foreground fade-up">Dashboard</h1>
-        <p className="mb-6 text-sm text-muted-foreground fade-up">Acompanhe seu progresso</p>
+        <h1 className="mb-2 text-2xl font-bold text-foreground fade-up stagger-1">Dashboard</h1>
+        <p className="mb-6 text-sm text-muted-foreground fade-up stagger-2">Acompanhe seu progresso</p>
 
         {/* Stats Cards */}
-        <div className="mb-6 grid grid-cols-3 gap-3 fade-up">
+        <div className="mb-6 grid grid-cols-3 gap-3 fade-up stagger-3">
           <div className="fokko-card p-3 text-center">
             <div className="text-2xl font-bold text-gradient">{completionRate}%</div>
             <div className="text-[10px] text-muted-foreground">Concluído</div>
@@ -99,7 +99,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Pie Chart */}
-        <div className="fokko-card mb-6 p-5 fade-up">
+        <div className="fokko-card mb-6 p-5 fade-up stagger-4">
           <h2 className="mb-4 text-sm font-semibold text-foreground">Tarefas por Categoria</h2>
           <div className="flex items-center justify-center">
             <ResponsiveContainer width="100%" height={200}>
@@ -146,7 +146,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Bar Chart */}
-        <div className="fokko-card mb-6 p-5 fade-up">
+        <div className="fokko-card mb-6 p-5 fade-up stagger-5">
           <h2 className="mb-4 text-sm font-semibold text-foreground">Desempenho Semanal</h2>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={barData}>
@@ -181,7 +181,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Goals Calendar */}
-        <div className="fokko-card mb-6 p-5 fade-up">
+        <div className="fokko-card mb-6 p-5 fade-up stagger-6">
           <h2 className="mb-4 text-sm font-semibold text-foreground">📅 Calendário de Metas</h2>
           <p className="mb-3 text-xs text-muted-foreground capitalize">{monthName}</p>
           <div className="grid grid-cols-7 gap-1 text-center">

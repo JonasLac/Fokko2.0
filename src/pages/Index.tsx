@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Sparkles, Plus, X } from "lucide-react";
-import BottomNav from "@/components/BottomNav";
+
 import TaskCategoryCard from "@/components/TaskCategoryCard";
 import {
   getAllCategories,

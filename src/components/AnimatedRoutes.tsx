@@ -1,6 +1,5 @@
 import { useRef } from "react";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
 import Index from "@/pages/Index";
 import FocusPage from "@/pages/FocusPage";
 import DashboardPage from "@/pages/DashboardPage";
@@ -17,18 +16,6 @@ const AnimatedRoutes = () => {
   const directionRef = useRef(1);
 
   const currentIndex = routes.indexOf(location.pathname);
-
-  const pageVariants = {
-    initial: (dir: number) => ({ opacity: 0, x: dir * 40 }),
-    animate: { opacity: 1, x: 0 },
-    exit: (dir: number) => ({ opacity: 0, x: dir * -40 }),
-  };
-
-  const pageTransition = {
-    type: "tween" as const,
-    ease: "easeInOut" as const,
-    duration: 0.22,
-  };
 
   const onTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -58,25 +45,12 @@ const AnimatedRoutes = () => {
 
   return (
     <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="min-h-screen">
-      <AnimatePresence mode="wait" custom={directionRef.current}>
-        <motion.div
-          key={location.pathname}
-          custom={directionRef.current}
-          variants={pageVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          transition={pageTransition}
-          className="min-h-screen"
-        >
-          <Routes location={location}>
-            <Route path="/" element={<Index />} />
-            <Route path="/focus" element={<FocusPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </motion.div>
-      </AnimatePresence>
+      <Routes location={location}>
+        <Route path="/" element={<Index />} />
+        <Route path="/focus" element={<FocusPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </div>
   );
 };

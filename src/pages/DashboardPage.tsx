@@ -35,11 +35,19 @@ const DashboardPage = () => {
 
   const barData = useMemo(() => {
     const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-    return days.map((day, i) => ({
-      day,
-      tarefas: Math.floor(Math.random() * 8) + 2,
-    }));
-  }, []);
+    const today = new Date();
+    const todayDow = today.getDay();
+    
+    return days.map((day, i) => {
+      // Use completion history for past days of the current week
+      const diff = i - todayDow;
+      const d = new Date(today);
+      d.setDate(d.getDate() + diff);
+      const dateStr = d.toISOString().split("T")[0];
+      const completed = completionHistory[dateStr] ? tasks.filter(t => t.completed).length : 0;
+      return { day, tarefas: i <= todayDow ? completed : 0 };
+    });
+  }, [tasks, completionHistory]);
 
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter((t) => t.completed).length;

@@ -175,13 +175,7 @@ export const saveTasks = (tasks: Task[]) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
 };
 
-const getDefaultTasks = (): Task[] => [
-  { id: "1", title: "Arrumar a cama", category: "home", completed: false, createdAt: new Date().toISOString() },
-  { id: "2", title: "Revisar relatório", category: "work", completed: false, createdAt: new Date().toISOString() },
-  { id: "3", title: "Ler 30 páginas", category: "study", completed: true, createdAt: new Date().toISOString() },
-  { id: "4", title: "Treino de 30min", category: "exercise", completed: false, createdAt: new Date().toISOString() },
-  { id: "5", title: "Meditar 10min", category: "personal", completed: false, createdAt: new Date().toISOString() },
-];
+const getDefaultTasks = (): Task[] => [];
 
 export const motivationalQuotes = [
   "Cada tarefa concluída é um passo rumo à sua melhor versão. 🚀",

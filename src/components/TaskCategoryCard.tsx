@@ -35,11 +35,11 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onDelete
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
-            className={`flex h-9 w-9 items-center justify-center rounded-lg ${isCustom ? "" : category.bgClass}`}
+            className={`flex h-10 w-10 items-center justify-center rounded-lg ${isCustom ? "" : category.bgClass}`}
             style={isCustom ? { background: `hsl(${category.color} / 0.15)` } : undefined}
           >
             <category.icon
-              size={18}
+              size={20}
               className={isCustom ? "" : category.colorClass}
               style={isCustom ? { color: `hsl(${category.color})` } : undefined}
             />
@@ -53,16 +53,16 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onDelete
           {onDeleteCategory && (
             <button
               onClick={onDeleteCategory}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/20 hover:text-destructive"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-destructive/20 active:text-destructive"
             >
-              <X size={14} />
+              <X size={18} />
             </button>
           )}
           <button
             onClick={() => setAdding(!adding)}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-secondary active:text-foreground"
           >
-            <Plus size={16} />
+            <Plus size={20} />
           </button>
         </div>
       </div>
@@ -81,33 +81,33 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onDelete
       </div>
 
       {/* Tasks */}
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         {categoryTasks.map((task, index) => (
           <div
             key={task.id}
-            className={`group flex items-center gap-3 rounded-lg px-2 py-2 transition-all duration-300 ${
-              task.completed ? "opacity-50" : "hover:bg-secondary/50"
+            className={`flex items-center gap-3 rounded-lg px-2 py-2.5 transition-all duration-300 ${
+              task.completed ? "opacity-50" : "active:bg-secondary/50"
             }`}
             style={{ animationDelay: `${index * 0.04}s` }}
           >
             <button
               onClick={() => onToggle(task.id)}
-              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all duration-300 ${
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 transition-all duration-300 ${
                 task.completed
                   ? "border-primary bg-primary"
-                  : "border-muted-foreground/30 hover:border-primary"
+                  : "border-muted-foreground/30 active:border-primary"
               }`}
             >
-              {task.completed && <Check size={12} className="text-primary-foreground check-bounce" />}
+              {task.completed && <Check size={14} className="text-primary-foreground check-bounce" />}
             </button>
             <span className={`flex-1 text-sm transition-all duration-300 ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
               {task.title}
             </span>
             <button
               onClick={() => onDelete(task.id)}
-              className="opacity-0 transition-all duration-200 group-hover:opacity-100 hover:scale-110"
+              className="flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90"
             >
-              <Trash2 size={14} className="text-muted-foreground hover:text-destructive transition-colors" />
+              <Trash2 size={16} className="text-muted-foreground/50 active:text-destructive transition-colors" />
             </button>
           </div>
         ))}
@@ -122,11 +122,11 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onDelete
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="Nova tarefa..."
-            className="flex-1 rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors duration-200"
+            className="flex-1 rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors duration-200"
           />
           <button
             onClick={handleAdd}
-            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-transform duration-200 hover:scale-105 active:scale-95"
+            className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-transform duration-200 active:scale-95"
           >
             Adicionar
           </button>

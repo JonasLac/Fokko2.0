@@ -85,8 +85,8 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="mx-auto max-w-md px-5 pt-10">
+    <div className="min-h-screen bg-background pb-28">
+      <div className="mx-auto max-w-md px-5 pt-12">
         <h1 className="mb-2 text-2xl font-bold text-foreground fade-up stagger-1">Dashboard</h1>
         <p className="mb-6 text-sm text-muted-foreground fade-up stagger-2">Acompanhe seu progresso</p>
 
@@ -197,10 +197,10 @@ const DashboardPage = () => {
               <div key={i} className="text-[10px] font-medium text-muted-foreground pb-1">{d}</div>
             ))}
             {calendarDays.map((day, i) => (
-              <div key={i} className="flex items-center justify-center aspect-square">
+              <div key={i} className="flex items-center justify-center aspect-square min-h-[40px]">
                 {day !== null ? (
                   <div
-                    className={`relative flex h-8 w-8 items-center justify-center rounded-full text-xs transition-all ${
+                    className={`relative flex h-9 w-9 items-center justify-center rounded-full text-xs transition-all ${
                       isToday(day)
                         ? "bg-primary/20 text-primary font-bold"
                         : "text-foreground/70"

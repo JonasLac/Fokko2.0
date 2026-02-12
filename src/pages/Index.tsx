@@ -102,8 +102,8 @@ const Index = () => {
   const strokeDashoffset = circumference * (1 - completionPercent / 100);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="mx-auto max-w-md px-5 pt-10">
+    <div className="min-h-screen bg-background pb-28">
+      <div className="mx-auto max-w-md px-5 pt-12">
         {/* Header */}
         <div className="mb-6 fade-up stagger-1">
           <h1 className="text-2xl font-bold text-foreground">{greeting}! 👋</h1>
@@ -181,17 +181,17 @@ const Index = () => {
           {!showAddCategory ? (
             <button
               onClick={() => setShowAddCategory(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm text-muted-foreground transition-all duration-300 hover:border-primary hover:text-foreground hover:scale-[1.01] active:scale-[0.99]"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-4 text-sm text-muted-foreground transition-all duration-300 active:scale-[0.98] active:border-primary active:text-foreground"
             >
-              <Plus size={16} />
+              <Plus size={18} />
               Nova categoria
             </button>
           ) : (
             <div className="fokko-card p-4 space-y-3 expand-in">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-foreground">Nova Categoria</h3>
-                <button onClick={() => setShowAddCategory(false)} className="text-muted-foreground hover:text-foreground transition-colors duration-200">
-                  <X size={16} />
+                <button onClick={() => setShowAddCategory(false)} className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground active:text-foreground transition-colors duration-200">
+                  <X size={18} />
                 </button>
               </div>
               <input
@@ -200,21 +200,21 @@ const Index = () => {
                 onChange={(e) => setNewCatName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
                 placeholder="Nome da categoria..."
-                className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors duration-200"
+                className="w-full rounded-lg border border-border bg-secondary px-3 py-3 text-base text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors duration-200"
               />
               <div className="flex gap-2">
                 {getCustomColorOptions().map((opt, i) => (
                   <button
                     key={opt.hsl}
                     onClick={() => setNewCatColor(opt.hsl)}
-                    className={`h-7 w-7 rounded-full transition-all duration-300 ${newCatColor === opt.hsl ? "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-110" : "hover:scale-105"}`}
+                    className={`h-9 w-9 rounded-full transition-all duration-300 ${newCatColor === opt.hsl ? "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-110" : ""}`}
                     style={{ background: `hsl(${opt.hsl})` }}
                   />
                 ))}
               </div>
               <button
                 onClick={handleAddCategory}
-                className="w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full rounded-lg bg-primary py-3 text-sm font-medium text-primary-foreground transition-transform duration-200 active:scale-[0.98]"
               >
                 Criar categoria
               </button>

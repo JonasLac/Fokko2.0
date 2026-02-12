@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Fokko</string>
+    <string name="title_activity_main">Fokko</string>
+    <string name="package_name">com.fokko.app</string>
+    <string name="custom_url_scheme">com.fokko.app</string>
+</resources>

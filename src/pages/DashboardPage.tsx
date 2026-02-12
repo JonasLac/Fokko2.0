@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Star } from "lucide-react";
-import BottomNav from "@/components/BottomNav";
+
 import { getAllCategories, loadTasks, loadCompletionHistory } from "@/lib/fokko-data";
 
 const DashboardPage = () => {
@@ -216,7 +216,7 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
-      <BottomNav />
+      
     </div>
   );
 };

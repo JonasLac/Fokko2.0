@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Play, Pause, RotateCcw, Info, Trophy, Plus } from "lucide-react";
-import BottomNav from "@/components/BottomNav";
+
 import { getFocusCycles, incrementFocusCycle } from "@/lib/fokko-data";
 
 const FOCUS_KEY = "fokko-focus-history";
@@ -318,7 +318,7 @@ const FocusPage = () => {
           </div>
         )}
       </div>
-      <BottomNav />
+      
     </div>
   );
 };

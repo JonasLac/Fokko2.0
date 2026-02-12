@@ -158,8 +158,8 @@ const FocusPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 animate-fade-in">
-      <div className="mx-auto max-w-md px-5 pt-10">
+    <div className="min-h-screen bg-background pb-28 animate-fade-in">
+      <div className="mx-auto max-w-md px-5 pt-12">
         {/* Header */}
         <div className="mb-8 text-center fade-up">
           <h1 className="text-2xl font-bold text-foreground">Modo Foco</h1>
@@ -197,24 +197,25 @@ const FocusPage = () => {
         </div>
 
         {/* Controls */}
-        <div className="mb-8 flex items-center justify-center gap-4 fade-up">
+        <div className="mb-8 flex items-center justify-center gap-5 fade-up">
           <button
             onClick={reset}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors active:text-foreground active:scale-95"
           >
-            <RotateCcw size={20} />
+            <RotateCcw size={22} />
           </button>
           <button
             onClick={() => setIsRunning(true)}
-            className="flex h-16 w-16 items-center justify-center rounded-full fokko-gradient text-primary-foreground shadow-lg fokko-glow transition-transform hover:scale-105"
+            className="flex h-18 w-18 items-center justify-center rounded-full fokko-gradient text-primary-foreground shadow-lg fokko-glow transition-transform active:scale-95"
+            style={{ height: '72px', width: '72px' }}
           >
-            <Play size={28} className="ml-1" />
+            <Play size={30} className="ml-1" />
           </button>
           <button
             onClick={() => setShowGuide(!showGuide)}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:text-foreground"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors active:text-foreground active:scale-95"
           >
-            <Info size={20} />
+            <Info size={22} />
           </button>
         </div>
 
@@ -228,10 +229,10 @@ const FocusPage = () => {
               <button
                 key={min}
                 onClick={() => { setGoalMinutes(min); setShowCustomInput(false); }}
-                className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                className={`rounded-xl px-5 py-3 text-sm font-medium transition-all active:scale-95 ${
                   goalMinutes === min && !showCustomInput
                     ? "fokko-gradient text-primary-foreground shadow-md"
-                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                    : "bg-secondary text-muted-foreground"
                 }`}
               >
                 {min}min
@@ -239,13 +240,13 @@ const FocusPage = () => {
             ))}
             <button
               onClick={() => setShowCustomInput(!showCustomInput)}
-              className={`rounded-xl px-3 py-2 text-sm font-medium transition-all ${
+              className={`rounded-xl px-4 py-3 text-sm font-medium transition-all active:scale-95 ${
                 showCustomInput
                   ? "fokko-gradient text-primary-foreground shadow-md"
-                  : "bg-secondary text-muted-foreground hover:text-foreground"
+                  : "bg-secondary text-muted-foreground"
               }`}
             >
-              <Plus size={16} />
+              <Plus size={18} />
             </button>
           </div>
           {showCustomInput && (
@@ -265,7 +266,7 @@ const FocusPage = () => {
                   }
                 }}
                 placeholder="Min..."
-                className="w-20 rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary text-center"
+                className="w-24 rounded-lg border border-border bg-secondary px-3 py-2.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus:border-primary text-center"
               />
               <button
                 onClick={() => {
@@ -276,7 +277,7 @@ const FocusPage = () => {
                     setCustomTime("");
                   }
                 }}
-                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
+                className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground active:scale-95 transition-transform"
               >
                 OK
               </button>

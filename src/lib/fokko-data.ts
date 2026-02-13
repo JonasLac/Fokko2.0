@@ -10,15 +10,41 @@ export interface Task {
   createdAt: string;
 }
 
+export interface FocusSessionRecord {
+  id: string;
+  date: string; // YYYY-MM-DD local
+  taskId?: string;
+  taskTitle?: string;
+  category?: CategoryId;
+  goalMinutes: number;
+  actualMinutes: number;
+  startedAt: string; // ISO
+  finishedAt: string; // ISO
+}
+
 export interface Category {
   id: CategoryId;
   label: string;
   icon: LucideIcon;
   colorClass: string;
   bgClass: string;
-  color?: string; // HSL string for custom categories
+  color?: string;
 }
 
+// ── Helper: local date string ──
+export const getLocalDateString = (d: Date = new Date()): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+export const parseLocalDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+
+// ── Categories ──
 export const defaultCategories: Category[] = [
   { id: "home", label: "Casa", icon: Home, colorClass: "text-category-home", bgClass: "bg-category-home/15" },
   { id: "work", label: "Trabalho", icon: Briefcase, colorClass: "text-category-work", bgClass: "bg-category-work/15" },
@@ -32,59 +58,122 @@ const CUSTOM_CATEGORIES_KEY = "fokko-custom-categories";
 const COMPLETION_HISTORY_KEY = "fokko-completion-history";
 const LAST_RESET_KEY = "fokko-last-reset";
 const FOCUS_CYCLES_KEY = "fokko-focus-cycles";
+const FOCUS_SESSIONS_KEY = "fokko-focus-sessions";
+const FOCUS_DAILY_KEY = "fokko-focus-history";
 
-// Check if tasks should be reset (new day)
+// ── Daily reset ──
 export const checkAndResetDaily = (): boolean => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateString();
   const lastReset = localStorage.getItem(LAST_RESET_KEY);
   if (lastReset === today) return false;
 
-  // Save yesterday's snapshot before resetting
   const tasks = loadTasks();
   if (tasks.length > 0) {
     saveCompletionSnapshot(tasks);
   }
 
-  // Reset all tasks to uncompleted
   const resetTasks = tasks.map((t) => ({ ...t, completed: false }));
   saveTasks(resetTasks);
 
-  // Reset focus history for today
+  // Reset focus daily minutes for today
   try {
-    const raw = localStorage.getItem("fokko-focus-history");
+    const raw = localStorage.getItem(FOCUS_DAILY_KEY);
     const history: { date: string; minutes: number }[] = raw ? JSON.parse(raw) : [];
     const filtered = history.filter((s) => s.date !== today);
-    localStorage.setItem("fokko-focus-history", JSON.stringify(filtered));
+    localStorage.setItem(FOCUS_DAILY_KEY, JSON.stringify(filtered));
   } catch {}
 
-  // Reset focus cycles
   localStorage.setItem(FOCUS_CYCLES_KEY, JSON.stringify({ date: today, count: 0 }));
-
   localStorage.setItem(LAST_RESET_KEY, today);
   return true;
 };
 
+// ── Focus cycles ──
 export const getFocusCycles = (): { date: string; count: number } => {
   try {
     const raw = localStorage.getItem(FOCUS_CYCLES_KEY);
     if (raw) {
       const data = JSON.parse(raw);
-      const today = new Date().toISOString().split("T")[0];
+      const today = getLocalDateString();
       if (data.date === today) return data;
     }
   } catch {}
-  return { date: new Date().toISOString().split("T")[0], count: 0 };
+  return { date: getLocalDateString(), count: 0 };
 };
 
 export const incrementFocusCycle = (): number => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateString();
   const current = getFocusCycles();
   const newCount = current.date === today ? current.count + 1 : 1;
   localStorage.setItem(FOCUS_CYCLES_KEY, JSON.stringify({ date: today, count: newCount }));
   return newCount;
 };
 
-// Icon map for custom categories (cycle through these)
+// ── Focus sessions (detailed) ──
+export const loadFocusSessions = (): FocusSessionRecord[] => {
+  try {
+    const raw = localStorage.getItem(FOCUS_SESSIONS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const saveFocusSession = (session: FocusSessionRecord) => {
+  const sessions = loadFocusSessions();
+  sessions.push(session);
+  localStorage.setItem(FOCUS_SESSIONS_KEY, JSON.stringify(sessions));
+
+  // Also update daily minutes aggregate
+  try {
+    const raw = localStorage.getItem(FOCUS_DAILY_KEY);
+    const history: { date: string; minutes: number }[] = raw ? JSON.parse(raw) : [];
+    const existing = history.find((s) => s.date === session.date);
+    if (existing) {
+      existing.minutes += session.actualMinutes;
+    } else {
+      history.push({ date: session.date, minutes: session.actualMinutes });
+    }
+    localStorage.setItem(FOCUS_DAILY_KEY, JSON.stringify(history));
+  } catch {}
+};
+
+export const getTodayFocusMinutes = (): number => {
+  try {
+    const raw = localStorage.getItem(FOCUS_DAILY_KEY);
+    const history: { date: string; minutes: number }[] = raw ? JSON.parse(raw) : [];
+    const today = getLocalDateString();
+    return history.find((s) => s.date === today)?.minutes || 0;
+  } catch {
+    return 0;
+  }
+};
+
+export const getWeekFocusMinutes = (): number => {
+  const sessions = loadFocusSessions();
+  const now = new Date();
+  const dow = now.getDay();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - dow);
+  const weekStartStr = getLocalDateString(weekStart);
+
+  return sessions
+    .filter((s) => s.date >= weekStartStr)
+    .reduce((sum, s) => sum + s.actualMinutes, 0);
+};
+
+export const getDailyAverageFocus = (): number => {
+  const sessions = loadFocusSessions();
+  if (sessions.length === 0) return 0;
+  const byDate = new Map<string, number>();
+  sessions.forEach((s) => {
+    byDate.set(s.date, (byDate.get(s.date) || 0) + s.actualMinutes);
+  });
+  const total = Array.from(byDate.values()).reduce((a, b) => a + b, 0);
+  return Math.round(total / byDate.size);
+};
+
+// ── Custom categories ──
 const customIcons: LucideIcon[] = [Heart, Briefcase, BookOpen, Dumbbell, Home];
 
 const customColorOptions = [
@@ -101,7 +190,7 @@ export const getCustomColorOptions = () => customColorOptions;
 interface StoredCustomCategory {
   id: string;
   label: string;
-  color: string; // HSL values like "190 80% 50%"
+  color: string;
   iconIndex: number;
 }
 
@@ -159,15 +248,15 @@ export const getAllCategories = (): Category[] => {
   return [...defaultCategories, ...loadCustomCategories()];
 };
 
-// Keep backward compat
 export const categories = defaultCategories;
 
+// ── Tasks ──
 export const loadTasks = (): Task[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : getDefaultTasks();
+    return raw ? JSON.parse(raw) : [];
   } catch {
-    return getDefaultTasks();
+    return [];
   }
 };
 
@@ -175,8 +264,7 @@ export const saveTasks = (tasks: Task[]) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
 };
 
-const getDefaultTasks = (): Task[] => [];
-
+// ── Quotes ──
 export const motivationalQuotes = [
   "Cada tarefa concluída é um passo rumo à sua melhor versão. 🚀",
   "Disciplina é escolher entre o que você quer agora e o que você mais quer. 💪",
@@ -185,10 +273,10 @@ export const motivationalQuotes = [
   "Não espere por motivação. Crie disciplina. 🔥",
 ];
 
-// Completion history: track days where all tasks were completed
+// ── Completion history ──
 export const saveCompletionSnapshot = (tasks: Task[]) => {
   if (tasks.length === 0) return;
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateString();
   const allCompleted = tasks.every((t) => t.completed);
   try {
     const raw = localStorage.getItem(COMPLETION_HISTORY_KEY);

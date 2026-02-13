@@ -3,9 +3,10 @@ import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Index from "@/pages/Index";
 import FocusPage from "@/pages/FocusPage";
 import DashboardPage from "@/pages/DashboardPage";
+import HistoryPage from "@/pages/HistoryPage";
 import NotFound from "@/pages/NotFound";
 
-const routes = ["/", "/focus", "/dashboard"];
+const routes = ["/", "/focus", "/dashboard", "/history"];
 const SWIPE_THRESHOLD = 60;
 const SWIPE_MAX_Y = 80;
 
@@ -13,9 +14,6 @@ const AnimatedRoutes = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
-  const directionRef = useRef(1);
-
-  const currentIndex = routes.indexOf(location.pathname);
 
   const onTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -35,10 +33,8 @@ const AnimatedRoutes = () => {
     if (idx === -1) return;
 
     if (dx < -SWIPE_THRESHOLD && idx < routes.length - 1) {
-      directionRef.current = 1;
       navigate(routes[idx + 1]);
     } else if (dx > SWIPE_THRESHOLD && idx > 0) {
-      directionRef.current = -1;
       navigate(routes[idx - 1]);
     }
   };
@@ -49,6 +45,7 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<Index />} />
         <Route path="/focus" element={<FocusPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/history" element={<HistoryPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>

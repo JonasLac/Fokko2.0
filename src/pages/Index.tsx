@@ -12,6 +12,7 @@ import {
   deleteCustomCategory,
   getCustomColorOptions,
   checkAndResetDaily,
+  getTodayFocusMinutes,
   type Task,
   type CategoryId,
   type Category,
@@ -87,14 +88,7 @@ const Index = () => {
   };
 
   // Focus history
-  const todayFocus = (() => {
-    try {
-      const raw = localStorage.getItem("fokko-focus-history");
-      const history = raw ? JSON.parse(raw) : [];
-      const today = new Date().toISOString().split("T")[0];
-      return history.find((s: any) => s.date === today)?.minutes || 0;
-    } catch { return 0; }
-  })();
+  const todayFocus = getTodayFocusMinutes();
 
   // Circular progress
   const circleRadius = 44;

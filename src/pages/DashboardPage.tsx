@@ -1,8 +1,16 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Star } from "lucide-react";
+import { Star, Clock, TrendingUp } from "lucide-react";
 
-import { getAllCategories, loadTasks, loadCompletionHistory } from "@/lib/fokko-data";
+import {
+  getAllCategories,
+  loadTasks,
+  loadCompletionHistory,
+  getLocalDateString,
+  getWeekFocusMinutes,
+  getDailyAverageFocus,
+  getTodayFocusMinutes,
+} from "@/lib/fokko-data";
 
 const DashboardPage = () => {
   const tasks = loadTasks();
@@ -33,19 +41,40 @@ const DashboardPage = () => {
     }).filter((d) => d.total > 0);
   }, [tasks, allCategories]);
 
+  // Bar chart: show completed tasks per day of week using completion history
+  // Only show data for days that have an entry in completionHistory
   const barData = useMemo(() => {
     const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     const today = new Date();
     const todayDow = today.getDay();
-    
+    const todayStr = getLocalDateString(today);
+
     return days.map((day, i) => {
-      // Use completion history for past days of the current week
       const diff = i - todayDow;
       const d = new Date(today);
       d.setDate(d.getDate() + diff);
-      const dateStr = d.toISOString().split("T")[0];
-      const completed = completionHistory[dateStr] ? tasks.filter(t => t.completed).length : 0;
-      return { day, tarefas: i <= todayDow ? completed : 0 };
+      const dateStr = getLocalDateString(d);
+
+      // For today: show current completed count
+      if (dateStr === todayStr) {
+        const completedToday = tasks.filter((t) => t.completed).length;
+        return { day, tarefas: completedToday };
+      }
+
+      // For past days this week: use history snapshot
+      if (i < todayDow) {
+        // If we have a history entry that's true, show total tasks for that day
+        // We only know if ALL were completed, so show a marker value
+        if (completionHistory[dateStr] === true) {
+          return { day, tarefas: tasks.length || 1 };
+        }
+        // If history exists but not all complete, we don't have exact count
+        // Show 0 as we don't track partial counts in history
+        return { day, tarefas: 0 };
+      }
+
+      // Future days: 0
+      return { day, tarefas: 0 };
     });
   }, [tasks, completionHistory]);
 
@@ -53,17 +82,11 @@ const DashboardPage = () => {
   const completedTasks = tasks.filter((t) => t.completed).length;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  // Focus history
-  const focusHistory = (() => {
-    try {
-      const raw = localStorage.getItem("fokko-focus-history");
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-  })();
-  const today = new Date().toISOString().split("T")[0];
-  const todayFocus = focusHistory.find((s: any) => s.date === today)?.minutes || 0;
+  const todayFocus = getTodayFocusMinutes();
+  const weekFocus = getWeekFocusMinutes();
+  const dailyAvg = getDailyAverageFocus();
 
-  // Calendar generation
+  // Calendar
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -80,9 +103,7 @@ const DashboardPage = () => {
     return completionHistory[dateStr] === true;
   };
 
-  const isToday = (day: number): boolean => {
-    return day === currentDate.getDate();
-  };
+  const isToday = (day: number): boolean => day === currentDate.getDate();
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -91,7 +112,24 @@ const DashboardPage = () => {
         <p className="mb-6 text-sm text-muted-foreground fade-up stagger-2">Acompanhe seu progresso</p>
 
         {/* Stats Cards */}
-        <div className="mb-6 grid grid-cols-3 gap-3 fade-up stagger-3">
+        <div className="mb-6 grid grid-cols-2 gap-3 fade-up stagger-3">
+          <div className="fokko-card p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock size={14} className="text-primary" />
+              <span className="text-[10px] text-muted-foreground">Foco da semana</span>
+            </div>
+            <div className="text-2xl font-bold text-foreground">{weekFocus}m</div>
+          </div>
+          <div className="fokko-card p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp size={14} className="text-success" />
+              <span className="text-[10px] text-muted-foreground">Média diária</span>
+            </div>
+            <div className="text-2xl font-bold text-foreground">{dailyAvg}m</div>
+          </div>
+        </div>
+
+        <div className="mb-6 grid grid-cols-3 gap-3 fade-up stagger-4">
           <div className="fokko-card p-3 text-center">
             <div className="text-2xl font-bold text-gradient">{completionRate}%</div>
             <div className="text-[10px] text-muted-foreground">Concluído</div>
@@ -107,76 +145,58 @@ const DashboardPage = () => {
         </div>
 
         {/* Pie Chart */}
-        <div className="fokko-card mb-6 p-5 fade-up stagger-4">
+        <div className="fokko-card mb-6 p-5 fade-up stagger-5">
           <h2 className="mb-4 text-sm font-semibold text-foreground">Tarefas por Categoria</h2>
-          <div className="flex items-center justify-center">
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  dataKey="value"
-                  strokeWidth={2}
-                  stroke="hsl(220, 25%, 6%)"
-                >
-                  {pieData.map((entry) => (
-                    <Cell key={entry.id} fill={categoryColors[entry.id] || "hsl(210, 50%, 50%)"} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: "hsl(220, 22%, 10%)",
-                    border: "1px solid hsl(220, 18%, 18%)",
-                    borderRadius: "8px",
-                    color: "hsl(210, 40%, 96%)",
-                    fontSize: "12px",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-2 flex flex-wrap justify-center gap-3">
-            {pieData.map((entry) => (
-              <div key={entry.id} className="flex items-center gap-1.5">
-                <div
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ background: categoryColors[entry.id] || "hsl(210, 50%, 50%)" }}
-                />
-                <span className="text-[10px] text-muted-foreground">
-                  {entry.name} ({entry.value}/{entry.total})
-                </span>
+          {pieData.length > 0 ? (
+            <>
+              <div className="flex items-center justify-center">
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={pieData} cx="50%" cy="50%"
+                      innerRadius={50} outerRadius={80}
+                      dataKey="value" strokeWidth={2}
+                      stroke="hsl(220, 25%, 6%)"
+                    >
+                      {pieData.map((entry) => (
+                        <Cell key={entry.id} fill={categoryColors[entry.id] || "hsl(210, 50%, 50%)"} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(220, 22%, 10%)",
+                        border: "1px solid hsl(220, 18%, 18%)",
+                        borderRadius: "8px",
+                        color: "hsl(210, 40%, 96%)",
+                        fontSize: "12px",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
+              <div className="mt-2 flex flex-wrap justify-center gap-3">
+                {pieData.map((entry) => (
+                  <div key={entry.id} className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full" style={{ background: categoryColors[entry.id] || "hsl(210, 50%, 50%)" }} />
+                    <span className="text-[10px] text-muted-foreground">{entry.name} ({entry.value}/{entry.total})</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-center text-xs text-muted-foreground py-8">Adicione tarefas para ver o gráfico</p>
+          )}
         </div>
 
         {/* Bar Chart */}
-        <div className="fokko-card mb-6 p-5 fade-up stagger-5">
+        <div className="fokko-card mb-6 p-5 fade-up stagger-6">
           <h2 className="mb-4 text-sm font-semibold text-foreground">Desempenho Semanal</h2>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={barData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 18%, 18%)" />
-              <XAxis
-                dataKey="day"
-                tick={{ fill: "hsl(215, 15%, 55%)", fontSize: 11 }}
-                axisLine={{ stroke: "hsl(220, 18%, 18%)" }}
-              />
-              <YAxis
-                tick={{ fill: "hsl(215, 15%, 55%)", fontSize: 11 }}
-                axisLine={{ stroke: "hsl(220, 18%, 18%)" }}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: "hsl(220, 22%, 10%)",
-                  border: "1px solid hsl(220, 18%, 18%)",
-                  borderRadius: "8px",
-                  color: "hsl(210, 40%, 96%)",
-                  fontSize: "12px",
-                }}
-              />
+              <XAxis dataKey="day" tick={{ fill: "hsl(215, 15%, 55%)", fontSize: 11 }} axisLine={{ stroke: "hsl(220, 18%, 18%)" }} />
+              <YAxis tick={{ fill: "hsl(215, 15%, 55%)", fontSize: 11 }} axisLine={{ stroke: "hsl(220, 18%, 18%)" }} />
+              <Tooltip contentStyle={{ background: "hsl(220, 22%, 10%)", border: "1px solid hsl(220, 18%, 18%)", borderRadius: "8px", color: "hsl(210, 40%, 96%)", fontSize: "12px" }} />
               <Bar dataKey="tarefas" fill="url(#barGradient)" radius={[4, 4, 0, 0]} />
               <defs>
                 <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
@@ -188,8 +208,8 @@ const DashboardPage = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Goals Calendar */}
-        <div className="fokko-card mb-6 p-5 fade-up stagger-6">
+        {/* Calendar */}
+        <div className="fokko-card mb-6 p-5 fade-up stagger-7">
           <h2 className="mb-4 text-sm font-semibold text-foreground">📅 Calendário de Metas</h2>
           <p className="mb-3 text-xs text-muted-foreground capitalize">{monthName}</p>
           <div className="grid grid-cols-7 gap-1 text-center">
@@ -201,17 +221,12 @@ const DashboardPage = () => {
                 {day !== null ? (
                   <div
                     className={`relative flex h-9 w-9 items-center justify-center rounded-full text-xs transition-all ${
-                      isToday(day)
-                        ? "bg-primary/20 text-primary font-bold"
-                        : "text-foreground/70"
+                      isToday(day) ? "bg-primary/20 text-primary font-bold" : "text-foreground/70"
                     } ${isAllComplete(day) ? "ring-2 ring-warning" : ""}`}
                   >
                     {day}
                     {isAllComplete(day) && (
-                      <Star
-                        size={10}
-                        className="absolute -top-0.5 -right-0.5 text-warning fill-warning"
-                      />
+                      <Star size={10} className="absolute -top-0.5 -right-0.5 text-warning fill-warning" />
                     )}
                   </div>
                 ) : null}
@@ -224,7 +239,6 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
-      
     </div>
   );
 };

@@ -6,56 +6,56 @@
 
 @layer base {
   :root {
-    --background: 220 25% 6%;
+    --background: 225 20% 5%;
     --foreground: 210 40% 96%;
 
-    --card: 220 22% 10%;
+    --card: 225 18% 8%;
     --card-foreground: 210 40% 96%;
 
-    --popover: 220 22% 10%;
+    --popover: 225 18% 8%;
     --popover-foreground: 210 40% 96%;
 
     --primary: 210 80% 55%;
-    --primary-foreground: 220 25% 6%;
+    --primary-foreground: 225 20% 5%;
 
-    --secondary: 220 20% 16%;
+    --secondary: 225 16% 12%;
     --secondary-foreground: 210 40% 90%;
 
-    --muted: 220 18% 14%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 225 14% 11%;
+    --muted-foreground: 215 12% 50%;
 
     --accent: 210 90% 60%;
-    --accent-foreground: 220 25% 6%;
+    --accent-foreground: 225 20% 5%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 210 40% 98%;
 
     --success: 142 70% 45%;
-    --success-foreground: 220 25% 6%;
+    --success-foreground: 225 20% 5%;
 
     --warning: 38 92% 55%;
-    --warning-foreground: 220 25% 6%;
+    --warning-foreground: 225 20% 5%;
 
-    --border: 220 18% 18%;
-    --input: 220 18% 18%;
+    --border: 225 14% 14%;
+    --input: 225 14% 14%;
     --ring: 210 80% 55%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 220 22% 8%;
+    --sidebar-background: 225 18% 6%;
     --sidebar-foreground: 210 40% 90%;
     --sidebar-primary: 210 80% 55%;
-    --sidebar-primary-foreground: 220 25% 6%;
-    --sidebar-accent: 220 18% 14%;
+    --sidebar-primary-foreground: 225 20% 5%;
+    --sidebar-accent: 225 14% 11%;
     --sidebar-accent-foreground: 210 40% 90%;
-    --sidebar-border: 220 18% 18%;
+    --sidebar-border: 225 14% 14%;
     --sidebar-ring: 210 80% 55%;
 
     /* Fokko custom tokens */
     --fokko-gradient-start: 210 80% 55%;
     --fokko-gradient-end: 210 90% 40%;
-    --fokko-surface: 220 22% 12%;
-    --fokko-surface-hover: 220 22% 15%;
+    --fokko-surface: 225 18% 9%;
+    --fokko-surface-hover: 225 18% 12%;
     --fokko-glow: 210 80% 55%;
 
     /* Category colors */
@@ -125,7 +125,7 @@
   }
 
   .fokko-surface {
-    background: hsl(220 22% 12%);
+    background: hsl(225 18% 9%);
   }
 
   .text-gradient {

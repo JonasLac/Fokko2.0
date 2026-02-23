@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Sparkles, Plus, X } from "lucide-react";
+import { Sparkles, Plus, X, Flame } from "lucide-react";
 
 import TaskCategoryCard from "@/components/TaskCategoryCard";
 import {
@@ -17,6 +17,7 @@ import {
   type CategoryId,
   type Category,
 } from "@/lib/fokko-data";
+import { calculateStreak } from "@/lib/streak";
 
 const Index = () => {
   const [tasks, setTasks] = useState<Task[]>(() => {
@@ -42,29 +43,19 @@ const Index = () => {
     []
   );
 
+  const streak = useMemo(() => calculateStreak(), [tasks]);
+
   const now = new Date();
   const hour = now.getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-  const dateStr = now.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  const dateStr = now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
 
   const toggleTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
-    );
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
   };
 
   const addTask = (title: string, category: CategoryId) => {
-    const newTask: Task = {
-      id: Date.now().toString(),
-      title,
-      category,
-      completed: false,
-      createdAt: new Date().toISOString(),
-    };
+    const newTask: Task = { id: Date.now().toString(), title, category, completed: false, createdAt: new Date().toISOString() };
     setTasks((prev) => [...prev, newTask]);
   };
 
@@ -87,10 +78,8 @@ const Index = () => {
     setTasks((prev) => prev.filter((t) => t.category !== categoryId));
   };
 
-  // Focus history
   const todayFocus = getTodayFocusMinutes();
 
-  // Circular progress
   const circleRadius = 44;
   const circumference = 2 * Math.PI * circleRadius;
   const strokeDashoffset = circumference * (1 - completionPercent / 100);
@@ -100,31 +89,33 @@ const Index = () => {
       <div className="mx-auto max-w-md px-5 pt-12">
         {/* Header */}
         <div className="mb-6 fade-up stagger-1">
-          <h1 className="text-2xl font-bold text-foreground">{greeting}! 👋</h1>
-          <p className="mt-1 text-sm capitalize text-muted-foreground">{dateStr}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">{greeting}! 👋</h1>
+              <p className="mt-1 text-sm capitalize text-muted-foreground">{dateStr}</p>
+            </div>
+            {/* Streak badge */}
+            {streak.current > 0 && (
+              <div className="flex items-center gap-1.5 rounded-full bg-warning/15 px-3 py-1.5 animate-scale-in">
+                <Flame size={16} className="text-warning" />
+                <span className="text-sm font-bold text-warning">{streak.current}</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Progress Overview */}
-        <div className="fokko-card mb-6 p-5 fade-up stagger-2">
+        {/* Progress + Focus */}
+        <div className="fokko-card mb-5 p-5 fade-up stagger-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {/* Circular progress */}
               <div className="relative h-24 w-24 shrink-0">
                 <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r={circleRadius} fill="none" stroke="hsl(220 18% 15%)" strokeWidth="7" />
                   <circle
-                    cx="50" cy="50" r={circleRadius}
-                    fill="none"
-                    stroke="hsl(220 18% 18%)"
-                    strokeWidth="7"
-                  />
-                  <circle
-                    cx="50" cy="50" r={circleRadius}
-                    fill="none"
+                    cx="50" cy="50" r={circleRadius} fill="none"
                     stroke={completionPercent === 100 ? "hsl(142 70% 45%)" : "hsl(210 80% 55%)"}
-                    strokeWidth="7"
-                    strokeLinecap="round"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
+                    strokeWidth="7" strokeLinecap="round"
+                    strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
                     className="transition-all duration-1000 ease-out"
                   />
                 </svg>
@@ -133,9 +124,7 @@ const Index = () => {
                 </div>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">
-                  {completedCount}/{totalCount} tarefas concluídas
-                </p>
+                <p className="text-xs text-muted-foreground">{completedCount}/{totalCount} concluídas</p>
                 {completionPercent === 100 && totalCount > 0 && (
                   <p className="mt-1 text-xs text-success font-medium animate-pop">🎉 Tudo concluído!</p>
                 )}
@@ -148,34 +137,46 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Motivational Quote */}
-        <div className="mb-6 flex items-start gap-3 rounded-xl bg-primary/10 px-4 py-3 fade-up stagger-3">
+        {/* Streak card (when > 0) */}
+        {streak.current > 0 && (
+          <div className="fokko-card mb-5 p-4 flex items-center justify-between fade-up stagger-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/15">
+                <Flame size={20} className="text-warning" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">🔥 {streak.current} {streak.current === 1 ? "dia" : "dias"} seguidos</p>
+                <p className="text-xs text-muted-foreground">Melhor: {streak.best} dias</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Quote */}
+        <div className="mb-5 flex items-start gap-3 rounded-xl bg-primary/8 px-4 py-3 fade-up stagger-3">
           <Sparkles size={16} className="mt-0.5 shrink-0 text-primary" />
           <p className="text-xs leading-relaxed text-foreground/80">{quote}</p>
         </div>
 
         {/* Task Categories */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {allCategories.map((cat, index) => (
             <div key={cat.id} className="slide-in-bottom" style={{ animationDelay: `${0.15 + index * 0.07}s` }}>
               <TaskCategoryCard
-                category={cat}
-                tasks={tasks}
-                onToggle={toggleTask}
-                onAdd={addTask}
-                onDelete={deleteTask}
+                category={cat} tasks={tasks}
+                onToggle={toggleTask} onAdd={addTask} onDelete={deleteTask}
                 onDeleteCategory={cat.color ? () => handleDeleteCategory(cat.id) : undefined}
               />
             </div>
           ))}
         </div>
 
-        {/* Add Category Button */}
-        <div className="mt-4 slide-in-bottom" style={{ animationDelay: '0.35s' }}>
+        {/* Add Category */}
+        <div className="mt-3 slide-in-bottom" style={{ animationDelay: "0.35s" }}>
           {!showAddCategory ? (
             <button
               onClick={() => setShowAddCategory(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-4 text-sm text-muted-foreground transition-all duration-300 active:scale-[0.98] active:border-primary active:text-foreground"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-4 text-sm text-muted-foreground active:scale-[0.98] active:border-primary active:text-foreground"
             >
               <Plus size={18} />
               Nova categoria
@@ -184,32 +185,27 @@ const Index = () => {
             <div className="fokko-card p-4 space-y-3 expand-in">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-foreground">Nova Categoria</h3>
-                <button onClick={() => setShowAddCategory(false)} className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground active:text-foreground transition-colors duration-200">
+                <button onClick={() => setShowAddCategory(false)} className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground active:text-foreground">
                   <X size={18} />
                 </button>
               </div>
               <input
-                autoFocus
-                value={newCatName}
+                autoFocus value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
                 placeholder="Nome da categoria..."
-                className="w-full rounded-lg border border-border bg-secondary px-3 py-3 text-base text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors duration-200"
+                className="w-full rounded-lg border border-border bg-secondary px-3 py-3 text-base text-foreground placeholder:text-muted-foreground outline-none focus:border-primary"
               />
               <div className="flex gap-2">
-                {getCustomColorOptions().map((opt, i) => (
+                {getCustomColorOptions().map((opt) => (
                   <button
-                    key={opt.hsl}
-                    onClick={() => setNewCatColor(opt.hsl)}
-                    className={`h-9 w-9 rounded-full transition-all duration-300 ${newCatColor === opt.hsl ? "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-110" : ""}`}
+                    key={opt.hsl} onClick={() => setNewCatColor(opt.hsl)}
+                    className={`h-9 w-9 rounded-full transition-all ${newCatColor === opt.hsl ? "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-110" : ""}`}
                     style={{ background: `hsl(${opt.hsl})` }}
                   />
                 ))}
               </div>
-              <button
-                onClick={handleAddCategory}
-                className="w-full rounded-lg bg-primary py-3 text-sm font-medium text-primary-foreground transition-transform duration-200 active:scale-[0.98]"
-              >
+              <button onClick={handleAddCategory} className="w-full rounded-lg bg-primary py-3 text-sm font-medium text-primary-foreground active:scale-[0.98]">
                 Criar categoria
               </button>
             </div>

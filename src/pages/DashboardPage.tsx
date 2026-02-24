@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Star, Clock, TrendingUp, Flame } from "lucide-react";
+import { Star, Clock, TrendingUp, Flame, Eye, EyeOff } from "lucide-react";
 
 import {
   getAllCategories,
@@ -10,10 +10,13 @@ import {
   getWeekFocusMinutes,
   getDailyAverageFocus,
   getTodayFocusMinutes,
+  isFocusEnabled,
+  setFocusEnabled,
 } from "@/lib/fokko-data";
 import { calculateStreak } from "@/lib/streak";
 
 const DashboardPage = () => {
+  const [focusOn, setFocusOn] = useState(isFocusEnabled);
   const tasks = loadTasks();
   const allCategories = getAllCategories();
   const completionHistory = loadCompletionHistory();
@@ -67,9 +70,15 @@ const DashboardPage = () => {
   const completedTasks = tasks.filter((t) => t.completed).length;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  const todayFocus = getTodayFocusMinutes();
-  const weekFocus = getWeekFocusMinutes();
-  const dailyAvg = getDailyAverageFocus();
+  const todayFocus = focusOn ? getTodayFocusMinutes() : 0;
+  const weekFocus = focusOn ? getWeekFocusMinutes() : 0;
+  const dailyAvg = focusOn ? getDailyAverageFocus() : 0;
+
+  const handleToggleFocus = () => {
+    const next = !focusOn;
+    setFocusEnabled(next);
+    setFocusOn(next);
+  };
 
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
@@ -92,35 +101,50 @@ const DashboardPage = () => {
   return (
     <div className="min-h-screen bg-background pb-28">
       <div className="mx-auto max-w-md px-5 pt-12">
-        <h1 className="mb-1 text-2xl font-bold text-foreground fade-up stagger-1">Dashboard</h1>
-        <p className="mb-6 text-sm text-muted-foreground fade-up stagger-2">Acompanhe seu progresso</p>
-
-        {/* Top stats row */}
-        <div className="mb-4 grid grid-cols-3 gap-2.5 fade-up stagger-3">
-          <div className="fokko-card p-3.5">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Clock size={12} className="text-primary" />
-              <span className="text-[10px] text-muted-foreground">Semana</span>
-            </div>
-            <div className="text-xl font-bold text-foreground">{weekFocus}m</div>
+        <div className="mb-6 flex items-center justify-between fade-up stagger-1">
+          <div>
+            <h1 className="mb-1 text-2xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Acompanhe seu progresso</p>
           </div>
-          <div className="fokko-card p-3.5">
-            <div className="flex items-center gap-1.5 mb-1">
-              <TrendingUp size={12} className="text-success" />
-              <span className="text-[10px] text-muted-foreground">Média/dia</span>
-            </div>
-            <div className="text-xl font-bold text-foreground">{dailyAvg}m</div>
-          </div>
-          <div className="fokko-card p-3.5">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Flame size={12} className="text-warning" />
-              <span className="text-[10px] text-muted-foreground">Streak</span>
-            </div>
-            <div className="text-xl font-bold text-warning">{streak.current}🔥</div>
-          </div>
+          <button
+            onClick={handleToggleFocus}
+            className={`flex h-11 w-11 items-center justify-center rounded-xl transition-colors active:scale-95 ${
+              focusOn ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"
+            }`}
+            title={focusOn ? "Desativar dados de foco" : "Ativar dados de foco"}
+          >
+            {focusOn ? <Eye size={18} /> : <EyeOff size={18} />}
+          </button>
         </div>
 
-        <div className="mb-4 grid grid-cols-3 gap-2.5 fade-up stagger-4">
+        {/* Top stats row - focus stats only when enabled */}
+        {focusOn && (
+          <div className="mb-4 grid grid-cols-3 gap-2.5 fade-up stagger-3">
+            <div className="fokko-card p-3.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Clock size={12} className="text-primary" />
+                <span className="text-[10px] text-muted-foreground">Semana</span>
+              </div>
+              <div className="text-xl font-bold text-foreground">{weekFocus}m</div>
+            </div>
+            <div className="fokko-card p-3.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <TrendingUp size={12} className="text-success" />
+                <span className="text-[10px] text-muted-foreground">Média/dia</span>
+              </div>
+              <div className="text-xl font-bold text-foreground">{dailyAvg}m</div>
+            </div>
+            <div className="fokko-card p-3.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Flame size={12} className="text-warning" />
+                <span className="text-[10px] text-muted-foreground">Streak</span>
+              </div>
+              <div className="text-xl font-bold text-warning">{streak.current}🔥</div>
+            </div>
+          </div>
+        )}
+
+        <div className={`mb-4 grid ${focusOn ? "grid-cols-3" : "grid-cols-2"} gap-2.5 fade-up stagger-4`}>
           <div className="fokko-card p-3 text-center">
             <div className="text-xl font-bold text-gradient">{completionRate}%</div>
             <div className="text-[10px] text-muted-foreground">Concluído</div>
@@ -129,10 +153,12 @@ const DashboardPage = () => {
             <div className="text-xl font-bold text-foreground">{completedTasks}</div>
             <div className="text-[10px] text-muted-foreground">Feitas</div>
           </div>
-          <div className="fokko-card p-3 text-center">
-            <div className="text-xl font-bold text-foreground">{todayFocus}m</div>
-            <div className="text-[10px] text-muted-foreground">Foco hoje</div>
-          </div>
+          {focusOn && (
+            <div className="fokko-card p-3 text-center">
+              <div className="text-xl font-bold text-foreground">{todayFocus}m</div>
+              <div className="text-[10px] text-muted-foreground">Foco hoje</div>
+            </div>
+          )}
         </div>
 
         {/* Streak detail */}

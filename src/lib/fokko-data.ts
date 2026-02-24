@@ -60,6 +60,21 @@ const LAST_RESET_KEY = "fokko-last-reset";
 const FOCUS_CYCLES_KEY = "fokko-focus-cycles";
 const FOCUS_SESSIONS_KEY = "fokko-focus-sessions";
 const FOCUS_DAILY_KEY = "fokko-focus-history";
+const FOCUS_ENABLED_KEY = "fokko-focus-enabled";
+
+// ── Focus enabled setting ──
+export const isFocusEnabled = (): boolean => {
+  try {
+    const raw = localStorage.getItem(FOCUS_ENABLED_KEY);
+    return raw === null ? true : JSON.parse(raw);
+  } catch {
+    return true;
+  }
+};
+
+export const setFocusEnabled = (enabled: boolean) => {
+  localStorage.setItem(FOCUS_ENABLED_KEY, JSON.stringify(enabled));
+};
 
 // ── Daily reset ──
 export const checkAndResetDaily = (): boolean => {

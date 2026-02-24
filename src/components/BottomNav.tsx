@@ -1,16 +1,18 @@
 import { Home, Clock, BarChart3, History } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-
-const navItems = [
-  { icon: Home, label: "Início", path: "/" },
-  { icon: Clock, label: "Foco", path: "/focus" },
-  { icon: BarChart3, label: "Dashboard", path: "/dashboard" },
-  { icon: History, label: "Histórico", path: "/history" },
-];
+import { isFocusEnabled } from "@/lib/fokko-data";
 
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const focusOn = isFocusEnabled();
+
+  const navItems = [
+    { icon: Home, label: "Início", path: "/" },
+    ...(focusOn ? [{ icon: Clock, label: "Foco", path: "/focus" }] : []),
+    { icon: BarChart3, label: "Dashboard", path: "/dashboard" },
+    ...(focusOn ? [{ icon: History, label: "Histórico", path: "/history" }] : []),
+  ];
 
   return (
     <nav

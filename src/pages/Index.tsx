@@ -13,6 +13,7 @@ import {
   getCustomColorOptions,
   checkAndResetDaily,
   getTodayFocusMinutes,
+  isFocusEnabled,
   type Task,
   type CategoryId,
   type Category,
@@ -78,7 +79,8 @@ const Index = () => {
     setTasks((prev) => prev.filter((t) => t.category !== categoryId));
   };
 
-  const todayFocus = getTodayFocusMinutes();
+  const focusOn = isFocusEnabled();
+  const todayFocus = focusOn ? getTodayFocusMinutes() : 0;
 
   const circleRadius = 44;
   const circumference = 2 * Math.PI * circleRadius;
@@ -130,27 +132,14 @@ const Index = () => {
                 )}
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-lg font-semibold text-foreground">{todayFocus}min</div>
-              <p className="text-xs text-muted-foreground">tempo de foco</p>
-            </div>
+            {focusOn && (
+              <div className="text-right">
+                <div className="text-lg font-semibold text-foreground">{todayFocus}min</div>
+                <p className="text-xs text-muted-foreground">tempo de foco</p>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Streak card (when > 0) */}
-        {streak.current > 0 && (
-          <div className="fokko-card mb-5 p-4 flex items-center justify-between fade-up stagger-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/15">
-                <Flame size={20} className="text-warning" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">🔥 {streak.current} {streak.current === 1 ? "dia" : "dias"} seguidos</p>
-                <p className="text-xs text-muted-foreground">Melhor: {streak.best} dias</p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Quote */}
         <div className="mb-5 flex items-start gap-3 rounded-xl bg-primary/8 px-4 py-3 fade-up stagger-3">

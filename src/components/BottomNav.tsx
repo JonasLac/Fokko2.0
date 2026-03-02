@@ -9,7 +9,7 @@ const BottomNav = () => {
 
   const navItems = [
     { icon: Home, label: "Início", path: "/" },
-    ...(focusOn ? [{ icon: Clock, label: "Foco", path: "/focus" }] : []),
+    { icon: Clock, label: "Foco", path: "/focus" },
     { icon: BarChart3, label: "Dashboard", path: "/dashboard" },
     ...(focusOn ? [{ icon: History, label: "Histórico", path: "/history" }] : []),
   ];

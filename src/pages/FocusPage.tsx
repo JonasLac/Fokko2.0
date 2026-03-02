@@ -147,7 +147,7 @@ const FocusPage = () => {
             )}
           </svg>
           <div className="text-center">
-            <div className={`text-6xl font-bold tabular-nums text-foreground ${timer.status === "running" ? "timer-pulse" : ""}`}>
+            <div className="text-6xl font-bold tabular-nums text-foreground">
               {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
             </div>
             {timer.status === "paused" && (

@@ -55,8 +55,12 @@ const Index = () => {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
   };
 
+  const toggleImportant = (id: string) => {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, important: !t.important } : t)));
+  };
+
   const addTask = (title: string, category: CategoryId) => {
-    const newTask: Task = { id: Date.now().toString(), title, category, completed: false, createdAt: new Date().toISOString() };
+    const newTask: Task = { id: Date.now().toString(), title, category, completed: false, important: false, createdAt: new Date().toISOString() };
     setTasks((prev) => [...prev, newTask]);
   };
 
@@ -154,6 +158,7 @@ const Index = () => {
               <TaskCategoryCard
                 category={cat} tasks={tasks}
                 onToggle={toggleTask} onAdd={addTask} onDelete={deleteTask}
+                onImportant={toggleImportant}
                 onDeleteCategory={cat.color ? () => handleDeleteCategory(cat.id) : undefined}
               />
             </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Check, Plus, Trash2, X, Star } from "lucide-react";
+import { Check, Plus, Trash2, X, Star, Pin, PinOff } from "lucide-react";
 import type { Task, CategoryId, Category } from "@/lib/fokko-data";
+import { playTaskComplete, playTaskUncomplete, playPop } from "@/lib/sounds";
 
 interface TaskCategoryCardProps {
   category: Category;
@@ -10,9 +11,11 @@ interface TaskCategoryCardProps {
   onDelete: (id: string) => void;
   onImportant: (id: string) => void;
   onDeleteCategory?: () => void;
+  pinned?: boolean;
+  onPinToggle?: () => void;
 }
 
-const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImportant, onDeleteCategory }: TaskCategoryCardProps) => {
+const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImportant, onDeleteCategory, pinned, onPinToggle }: TaskCategoryCardProps) => {
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
 
@@ -37,7 +40,7 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
   };
 
   return (
-    <div className="fokko-card p-4 fade-up">
+    <div className={`fokko-card p-4 fade-up ${pinned ? "ring-1 ring-primary/40" : ""}`}>
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
@@ -51,11 +54,25 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
             />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground">{category.label}</h3>
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm font-semibold text-foreground">{category.label}</h3>
+              {pinned && <Pin size={11} className="text-primary" />}
+            </div>
             <p className="text-xs text-muted-foreground">{completed}/{total} concluídas</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {onPinToggle && (
+            <button
+              onClick={() => { playPop(); onPinToggle(); }}
+              className={`flex h-11 w-11 items-center justify-center rounded-lg transition-colors ${
+                pinned ? "text-primary active:bg-primary/20" : "text-muted-foreground active:bg-secondary active:text-foreground"
+              }`}
+              title={pinned ? "Desafixar categoria" : "Fixar categoria no topo"}
+            >
+              {pinned ? <PinOff size={17} /> : <Pin size={17} />}
+            </button>
+          )}
           {onDeleteCategory && (
             <button
               onClick={onDeleteCategory}
@@ -97,7 +114,7 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
             style={{ animationDelay: `${index * 0.04}s` }}
           >
             <button
-              onClick={() => onToggle(task.id)}
+              onClick={() => { task.completed ? playTaskUncomplete() : playTaskComplete(); onToggle(task.id); }}
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 transition-all duration-300 ${
                 task.completed
                   ? "border-primary bg-primary"

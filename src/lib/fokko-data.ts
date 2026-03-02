@@ -55,6 +55,7 @@ export const defaultCategories: Category[] = [
 ];
 
 const STORAGE_KEY = "fokko-tasks";
+const PINNED_CATEGORY_KEY = "fokko-pinned-category";
 const CUSTOM_CATEGORIES_KEY = "fokko-custom-categories";
 const COMPLETION_HISTORY_KEY = "fokko-completion-history";
 const LAST_RESET_KEY = "fokko-last-reset";
@@ -258,6 +259,16 @@ export const deleteCustomCategory = (id: string) => {
     const stored: StoredCustomCategory[] = JSON.parse(raw);
     localStorage.setItem(CUSTOM_CATEGORIES_KEY, JSON.stringify(stored.filter((s) => s.id !== id)));
   } catch {}
+};
+
+// ── Pinned category ──
+export const getPinnedCategory = (): string | null => {
+  return localStorage.getItem(PINNED_CATEGORY_KEY);
+};
+
+export const setPinnedCategory = (id: string | null) => {
+  if (id === null) localStorage.removeItem(PINNED_CATEGORY_KEY);
+  else localStorage.setItem(PINNED_CATEGORY_KEY, id);
 };
 
 export const getAllCategories = (): Category[] => {

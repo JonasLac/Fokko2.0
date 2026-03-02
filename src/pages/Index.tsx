@@ -14,6 +14,8 @@ import {
   checkAndResetDaily,
   getTodayFocusMinutes,
   isFocusEnabled,
+  getPinnedCategory,
+  setPinnedCategory,
   type Task,
   type CategoryId,
   type Category,
@@ -29,6 +31,7 @@ const Index = () => {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCatName, setNewCatName] = useState("");
   const [newCatColor, setNewCatColor] = useState(getCustomColorOptions()[0].hsl);
+  const [pinnedCategoryId, setPinnedCategoryId] = useState<string | null>(getPinnedCategory);
 
   useEffect(() => {
     saveTasks(tasks);
@@ -81,7 +84,26 @@ const Index = () => {
     deleteCustomCategory(categoryId);
     setAllCategories((prev) => prev.filter((c) => c.id !== categoryId));
     setTasks((prev) => prev.filter((t) => t.category !== categoryId));
+    if (pinnedCategoryId === categoryId) {
+      setPinnedCategoryId(null);
+      setPinnedCategory(null);
+    }
   };
+
+  const handlePinToggle = (categoryId: string) => {
+    const newPinned = pinnedCategoryId === categoryId ? null : categoryId;
+    setPinnedCategoryId(newPinned);
+    setPinnedCategory(newPinned);
+  };
+
+  const orderedCategories = useMemo(() => {
+    if (!pinnedCategoryId) return allCategories;
+    const idx = allCategories.findIndex((c) => c.id === pinnedCategoryId);
+    if (idx <= 0) return allCategories;
+    const arr = [...allCategories];
+    const [pinned] = arr.splice(idx, 1);
+    return [pinned, ...arr];
+  }, [allCategories, pinnedCategoryId]);
 
   const focusOn = isFocusEnabled();
   const todayFocus = focusOn ? getTodayFocusMinutes() : 0;
@@ -153,13 +175,15 @@ const Index = () => {
 
         {/* Task Categories */}
         <div className="space-y-3">
-          {allCategories.map((cat, index) => (
+          {orderedCategories.map((cat, index) => (
             <div key={cat.id} className="slide-in-bottom" style={{ animationDelay: `${0.15 + index * 0.07}s` }}>
               <TaskCategoryCard
                 category={cat} tasks={tasks}
                 onToggle={toggleTask} onAdd={addTask} onDelete={deleteTask}
                 onImportant={toggleImportant}
                 onDeleteCategory={cat.color ? () => handleDeleteCategory(cat.id) : undefined}
+                pinned={pinnedCategoryId === cat.id}
+                onPinToggle={() => handlePinToggle(cat.id)}
               />
             </div>
           ))}

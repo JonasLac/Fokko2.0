@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Plus, Trash2, X } from "lucide-react";
+import { Check, Plus, Trash2, X, Star } from "lucide-react";
 import type { Task, CategoryId, Category } from "@/lib/fokko-data";
 
 interface TaskCategoryCardProps {
@@ -8,14 +8,20 @@ interface TaskCategoryCardProps {
   onToggle: (id: string) => void;
   onAdd: (title: string, category: CategoryId) => void;
   onDelete: (id: string) => void;
+  onImportant: (id: string) => void;
   onDeleteCategory?: () => void;
 }
 
-const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onDeleteCategory }: TaskCategoryCardProps) => {
+const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImportant, onDeleteCategory }: TaskCategoryCardProps) => {
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
 
   const categoryTasks = tasks.filter((t) => t.category === category.id);
+  // Sort: important first, then by createdAt
+  const sorted = [...categoryTasks].sort((a, b) => {
+    if (a.important === b.important) return 0;
+    return a.important ? -1 : 1;
+  });
   const completed = categoryTasks.filter((t) => t.completed).length;
   const total = categoryTasks.length;
   const progress = total > 0 ? (completed / total) * 100 : 0;
@@ -82,7 +88,7 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onDelete
 
       {/* Tasks */}
       <div className="space-y-0.5">
-        {categoryTasks.map((task, index) => (
+        {sorted.map((task, index) => (
           <div
             key={task.id}
             className={`flex items-center gap-3 rounded-lg px-2 py-2.5 transition-all duration-300 ${
@@ -103,6 +109,14 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onDelete
             <span className={`flex-1 text-sm transition-all duration-300 ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
               {task.title}
             </span>
+            <button
+              onClick={() => onImportant(task.id)}
+              className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90 ${
+                task.important ? "text-warning" : "text-muted-foreground/40 active:text-warning"
+              }`}
+            >
+              <Star size={15} className={task.important ? "fill-warning" : ""} />
+            </button>
             <button
               onClick={() => onDelete(task.id)}
               className="flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90"

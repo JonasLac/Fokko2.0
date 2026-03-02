@@ -7,6 +7,7 @@ export interface Task {
   title: string;
   category: CategoryId;
   completed: boolean;
+  important: boolean;
   createdAt: string;
 }
 

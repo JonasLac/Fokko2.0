@@ -184,6 +184,7 @@ const Index = () => {
                 onDeleteCategory={cat.color ? () => handleDeleteCategory(cat.id) : undefined}
                 pinned={pinnedCategoryId === cat.id}
                 onPinToggle={() => handlePinToggle(cat.id)}
+                anyPinned={!!pinnedCategoryId}
               />
             </div>
           ))}

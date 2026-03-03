@@ -1,7 +1,8 @@
 import { useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { isFocusEnabled } from "@/lib/fokko-data";
 
-const routes = ["/", "/focus", "/dashboard"];
+const BASE_ROUTES = ["/", "/focus", "/dashboard"];
 const SWIPE_THRESHOLD = 60;
 const SWIPE_MAX_Y = 80;
 
@@ -24,6 +25,9 @@ export function useSwipeNavigation() {
       touchStart.current = null;
 
       if (dy > SWIPE_MAX_Y || Math.abs(dx) < SWIPE_THRESHOLD) return;
+
+      const focusOn = isFocusEnabled();
+      const routes = focusOn ? [...BASE_ROUTES, "/history"] : BASE_ROUTES;
 
       const currentIndex = routes.indexOf(location.pathname);
       if (currentIndex === -1) return;

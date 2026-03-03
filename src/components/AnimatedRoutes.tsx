@@ -5,8 +5,9 @@ import FocusPage from "@/pages/FocusPage";
 import DashboardPage from "@/pages/DashboardPage";
 import HistoryPage from "@/pages/HistoryPage";
 import NotFound from "@/pages/NotFound";
+import { isFocusEnabled } from "@/lib/fokko-data";
 
-const routes = ["/", "/focus", "/dashboard", "/history"];
+const BASE_ROUTES = ["/", "/focus", "/dashboard"];
 const SWIPE_THRESHOLD = 60;
 const SWIPE_MAX_Y = 80;
 
@@ -28,6 +29,9 @@ const AnimatedRoutes = () => {
     touchStart.current = null;
 
     if (dy > SWIPE_MAX_Y || Math.abs(dx) < SWIPE_THRESHOLD) return;
+
+    const focusOn = isFocusEnabled();
+    const routes = focusOn ? [...BASE_ROUTES, "/history"] : BASE_ROUTES;
 
     const idx = routes.indexOf(location.pathname);
     if (idx === -1) return;

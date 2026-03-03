@@ -15,12 +15,28 @@ import {
 } from "@/lib/fokko-data";
 import { calculateStreak } from "@/lib/streak";
 
+// Detect dark mode for chart theming
+const isDark = () => !window.matchMedia("(prefers-color-scheme: light)").matches;
+
 const DashboardPage = () => {
   const [focusOn, setFocusOn] = useState(isFocusEnabled);
+  const [dark, setDark] = useState(isDark);
+
+  // Re-check on render (reactive to system change would need a listener but this is fine for page loads)
+  useMemo(() => setDark(isDark()), []);
+
   const tasks = loadTasks();
   const allCategories = getAllCategories();
   const completionHistory = loadCompletionHistory();
   const streak = useMemo(() => calculateStreak(), []);
+
+  const chartTooltipStyle = {
+    background: dark ? "hsl(225, 18%, 8%)" : "hsl(0, 0%, 100%)",
+    border: dark ? "1px solid hsl(225, 14%, 14%)" : "1px solid hsl(210, 20%, 86%)",
+    borderRadius: "8px",
+    color: dark ? "hsl(210, 40%, 96%)" : "hsl(220, 20%, 10%)",
+    fontSize: "12px",
+  };
 
   const categoryColors: Record<string, string> = useMemo(() => {
     const colors: Record<string, string> = {
@@ -79,6 +95,9 @@ const DashboardPage = () => {
     setFocusEnabled(next);
     setFocusOn(next);
   };
+
+  const gridStroke = dark ? "hsl(225, 14%, 14%)" : "hsl(210, 20%, 88%)";
+  const axisTickFill = dark ? "hsl(215, 12%, 50%)" : "hsl(215, 14%, 45%)";
 
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
@@ -182,12 +201,25 @@ const DashboardPage = () => {
               <div className="flex items-center justify-center">
                 <ResponsiveContainer width="100%" height={180}>
                   <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} dataKey="value" strokeWidth={2} stroke="hsl(225, 20%, 5%)">
+                    <Pie
+                      data={pieData}
+                      cx="50%" cy="50%"
+                      innerRadius={45} outerRadius={75}
+                      dataKey="value"
+                      strokeWidth={2}
+                      stroke={dark ? "hsl(225, 20%, 5%)" : "hsl(210, 30%, 97%)"}
+                    >
                       {pieData.map((entry) => (
                         <Cell key={entry.id} fill={categoryColors[entry.id] || "hsl(210, 50%, 50%)"} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ background: "hsl(225, 18%, 8%)", border: "1px solid hsl(225, 14%, 14%)", borderRadius: "8px", color: "hsl(210, 40%, 96%)", fontSize: "12px" }} />
+                    <Tooltip
+                      contentStyle={chartTooltipStyle}
+                      formatter={(value, name, props) => {
+                        const item = pieData.find((d) => d.name === name);
+                        return [`${value}/${item?.total ?? value}`, name];
+                      }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -210,10 +242,22 @@ const DashboardPage = () => {
           <h2 className="mb-4 text-sm font-semibold text-foreground">Desempenho Semanal</h2>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(225, 14%, 14%)" />
-              <XAxis dataKey="day" tick={{ fill: "hsl(215, 12%, 50%)", fontSize: 11 }} axisLine={{ stroke: "hsl(225, 14%, 14%)" }} />
-              <YAxis tick={{ fill: "hsl(215, 12%, 50%)", fontSize: 11 }} axisLine={{ stroke: "hsl(225, 14%, 14%)" }} />
-              <Tooltip contentStyle={{ background: "hsl(225, 18%, 8%)", border: "1px solid hsl(225, 14%, 14%)", borderRadius: "8px", color: "hsl(210, 40%, 96%)", fontSize: "12px" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+              <XAxis
+                dataKey="day"
+                tick={{ fill: axisTickFill, fontSize: 11 }}
+                axisLine={{ stroke: gridStroke }}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fill: axisTickFill, fontSize: 11 }}
+                axisLine={{ stroke: gridStroke }}
+                tickLine={false}
+              />
+              <Tooltip
+                contentStyle={chartTooltipStyle}
+                cursor={{ fill: "transparent" }}
+              />
               <Bar dataKey="tarefas" fill="url(#barGradient)" radius={[4, 4, 0, 0]} />
               <defs>
                 <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Plus, Trash2, X, Star, Pin, PinOff } from "lucide-react";
+import { Check, Plus, Trash2, X, Star, Pin, PinOff, ChevronDown, ChevronUp } from "lucide-react";
 import type { Task, CategoryId, Category } from "@/lib/fokko-data";
 import { playTaskComplete, playTaskUncomplete, playPop } from "@/lib/sounds";
 
@@ -13,14 +13,16 @@ interface TaskCategoryCardProps {
   onDeleteCategory?: () => void;
   pinned?: boolean;
   onPinToggle?: () => void;
+  anyPinned?: boolean;
 }
 
-const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImportant, onDeleteCategory, pinned, onPinToggle }: TaskCategoryCardProps) => {
+const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImportant, onDeleteCategory, pinned, onPinToggle, anyPinned }: TaskCategoryCardProps) => {
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
+  const [showPinFor, setShowPinFor] = useState(false);
 
   const categoryTasks = tasks.filter((t) => t.category === category.id);
-  // Sort: important first, then by createdAt
   const sorted = [...categoryTasks].sort((a, b) => {
     if (a.important === b.important) return 0;
     return a.important ? -1 : 1;
@@ -31,6 +33,9 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
 
   const isCustom = !!category.color;
 
+  // Show pin button if: this category is pinned OR no category is pinned OR user tapped to reveal
+  const showPinButton = pinned || !anyPinned || showPinFor;
+
   const handleAdd = () => {
     if (newTitle.trim()) {
       onAdd(newTitle.trim(), category.id);
@@ -39,10 +44,24 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
     }
   };
 
+  const handleHeaderTap = () => {
+    if (anyPinned && !pinned) {
+      setShowPinFor((v) => !v);
+    }
+  };
+
+  const handleToggleTask = (task: Task) => {
+    task.completed ? playTaskUncomplete() : playTaskComplete();
+    onToggle(task.id);
+  };
+
   return (
     <div className={`fokko-card p-4 fade-up ${pinned ? "ring-1 ring-primary/40" : ""}`}>
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div
+          className="flex flex-1 items-center gap-3 active:opacity-70"
+          onClick={handleHeaderTap}
+        >
           <div
             className={`flex h-10 w-10 items-center justify-center rounded-lg ${isCustom ? "" : category.bgClass}`}
             style={isCustom ? { background: `hsl(${category.color} / 0.15)` } : undefined}
@@ -62,9 +81,9 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
           </div>
         </div>
         <div className="flex items-center gap-1">
-          {onPinToggle && (
+          {showPinButton && onPinToggle && (
             <button
-              onClick={() => { playPop(); onPinToggle(); }}
+              onClick={() => { playPop(); onPinToggle(); setShowPinFor(false); }}
               className={`flex h-11 w-11 items-center justify-center rounded-lg transition-colors ${
                 pinned ? "text-primary active:bg-primary/20" : "text-muted-foreground active:bg-secondary active:text-foreground"
               }`}
@@ -87,6 +106,12 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
           >
             <Plus size={20} />
           </button>
+          <button
+            onClick={() => setCollapsed((v) => !v)}
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-secondary active:text-foreground"
+          >
+            {collapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+          </button>
         </div>
       </div>
 
@@ -104,45 +129,49 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
       </div>
 
       {/* Tasks */}
-      <div className="space-y-0.5">
-        {sorted.map((task, index) => (
-          <div
-            key={task.id}
-            className={`flex items-center gap-3 rounded-lg px-2 py-2.5 transition-all duration-300 ${
-              task.completed ? "opacity-50" : "active:bg-secondary/50"
-            }`}
-            style={{ animationDelay: `${index * 0.04}s` }}
-          >
-            <button
-              onClick={() => { task.completed ? playTaskUncomplete() : playTaskComplete(); onToggle(task.id); }}
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 transition-all duration-300 ${
-                task.completed
-                  ? "border-primary bg-primary"
-                  : "border-muted-foreground/30 active:border-primary"
+      {!collapsed && (
+        <div className="space-y-0.5">
+          {sorted.map((task, index) => (
+            <div
+              key={task.id}
+              className={`flex items-center gap-3 rounded-lg px-2 py-2.5 transition-all duration-300 cursor-pointer ${
+                task.completed ? "opacity-50" : "active:bg-secondary/50"
               }`}
+              style={{ animationDelay: `${index * 0.04}s` }}
+              onClick={() => handleToggleTask(task)}
             >
-              {task.completed && <Check size={14} className="text-primary-foreground check-bounce" />}
-            </button>
-            <span className={`flex-1 text-sm transition-all duration-300 ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
-              {task.title}
-            </span>
-            <button
-              onClick={() => onImportant(task.id)}
-              className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90 ${
-                task.important ? "text-warning" : "text-muted-foreground/40 active:text-warning"
-              }`}
-            >
-              <Star size={15} className={task.important ? "fill-warning" : ""} />
-            </button>
-            <button
-              onClick={() => onDelete(task.id)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90"
-            >
-              <Trash2 size={16} className="text-muted-foreground/50 active:text-destructive transition-colors" />
-            </button>
-          </div>
-        ))}
-      </div>
+              <div
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 transition-all duration-300 ${
+                  task.completed
+                    ? "border-primary bg-primary"
+                    : "border-muted-foreground/30"
+                }`}
+              >
+                {task.completed && <Check size={14} className="text-primary-foreground check-bounce" />}
+              </div>
+              <span className={`flex-1 text-sm transition-all duration-300 ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                {task.title}
+              </span>
+              {total > 1 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onImportant(task.id); }}
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90 ${
+                    task.important ? "text-warning" : "text-muted-foreground/40 active:text-warning"
+                  }`}
+                >
+                  <Star size={15} className={task.important ? "fill-warning" : ""} />
+                </button>
+              )}
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+                className="flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90"
+              >
+                <Trash2 size={16} className="text-muted-foreground/50 active:text-destructive transition-colors" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Add task */}
       {adding && (

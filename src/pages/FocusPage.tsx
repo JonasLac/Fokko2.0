@@ -36,6 +36,9 @@ const FocusPage = () => {
   const mins = Math.floor(displaySeconds / 60);
   const secs = displaySeconds % 60;
 
+  const isDark = !window.matchMedia("(prefers-color-scheme: light)").matches;
+  const circleTrackColor = isDark ? "hsl(220 18% 15%)" : "hsl(210 20% 88%)";
+
   const getCategoryLabel = (catId?: string) => {
     if (!catId) return "";
     return allCategories.find((c) => c.id === catId)?.label || "";
@@ -75,7 +78,6 @@ const FocusPage = () => {
           <p className="text-3xl font-bold text-foreground mb-1 tabular-nums">{timer.pendingStopwatchSession.minutes}min</p>
           <p className="text-sm text-muted-foreground mb-6">Deseja salvar como sessão de foco?</p>
 
-          {/* Task picker for stopwatch save */}
           <div className="mb-4">
             <button
               onClick={() => setShowStopwatchTaskPicker(!showStopwatchTaskPicker)}
@@ -87,7 +89,7 @@ const FocusPage = () => {
               <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showStopwatchTaskPicker ? "rotate-180" : ""}`} />
             </button>
             {showStopwatchTaskPicker && (
-              <div className="mt-2 fokko-card p-2 space-y-0.5 max-h-36 overflow-y-auto">
+              <div className="mt-2 fokko-card p-2 space-y-0.5 max-h-36 overflow-y-auto expand-in">
                 <button onClick={() => { setStopwatchTask(null); setShowStopwatchTaskPicker(false); }} className="w-full text-left rounded-lg px-3 py-2.5 text-sm text-muted-foreground active:bg-secondary">
                   Nenhuma
                 </button>
@@ -124,8 +126,7 @@ const FocusPage = () => {
           </div>
         )}
 
-        {/* Mode badge */}
-        <div className="mb-4 flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
+        <div className="mb-4 flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 animate-fade-in">
           {isTimer ? <Clock size={12} className="text-primary" /> : <Timer size={12} className="text-primary" />}
           <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
             {isTimer ? "Temporizador" : "Cronômetro"}
@@ -134,7 +135,7 @@ const FocusPage = () => {
 
         <div className="relative mx-auto mb-10 flex h-72 w-72 items-center justify-center animate-scale-in">
           <svg className="absolute inset-0" viewBox="0 0 288 288">
-            <circle cx="144" cy="144" r="132" fill="none" stroke="hsl(220 18% 15%)" strokeWidth="5" />
+            <circle cx="144" cy="144" r="132" fill="none" stroke={circleTrackColor} strokeWidth="5" />
             {isTimer && (
               <circle
                 cx="144" cy="144" r="132" fill="none"
@@ -157,13 +158,11 @@ const FocusPage = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Stop / finish */}
           {!isTimer && (
             <button onClick={timer.stopStopwatch} className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/20 text-destructive active:scale-95">
               <Square size={22} />
             </button>
           )}
-
           {timer.status === "running" ? (
             <button onClick={timer.pause} className="flex h-16 w-16 items-center justify-center rounded-full fokko-gradient text-primary-foreground shadow-lg fokko-glow active:scale-95">
               <Pause size={28} />
@@ -173,7 +172,6 @@ const FocusPage = () => {
               <Play size={28} className="ml-1" />
             </button>
           )}
-
           <button onClick={timer.reset} className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-muted-foreground active:scale-95">
             <RotateCcw size={20} />
           </button>
@@ -202,17 +200,17 @@ const FocusPage = () => {
   return (
     <div className="min-h-screen bg-background pb-28 animate-fade-in">
       <div className="mx-auto max-w-md px-5 pt-12">
-        <div className="mb-6 text-center fade-up">
+        <div className="mb-6 text-center focus-tool-enter" style={{ animationDelay: "0.05s" }}>
           <h1 className="text-2xl font-bold text-foreground">Modo Foco</h1>
           <p className="mt-1 text-sm text-muted-foreground">Hoje: {todayFocus}min de foco</p>
         </div>
 
         {/* Mode toggle */}
-        <div className="mb-6 flex justify-center fade-up">
+        <div className="mb-6 flex justify-center focus-tool-enter" style={{ animationDelay: "0.1s" }}>
           <div className="flex rounded-xl bg-secondary p-1 gap-1">
             <button
               onClick={() => timer.setMode("timer")}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
                 isTimer ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"
               }`}
             >
@@ -221,7 +219,7 @@ const FocusPage = () => {
             </button>
             <button
               onClick={() => timer.setMode("stopwatch")}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
                 !isTimer ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"
               }`}
             >
@@ -232,15 +230,15 @@ const FocusPage = () => {
         </div>
 
         {/* Task selector */}
-        <div className="mb-6 fade-up">
+        <div className="mb-6 focus-tool-enter" style={{ animationDelay: "0.15s" }}>
           <button
             onClick={() => setShowTaskPicker(!showTaskPicker)}
-            className="w-full flex items-center justify-between rounded-xl bg-secondary px-4 py-3.5 text-sm active:scale-[0.98]"
+            className="w-full flex items-center justify-between rounded-xl bg-secondary px-4 py-3.5 text-sm active:scale-[0.98] transition-transform"
           >
             <span className={timer.linkedTask ? "text-foreground" : "text-muted-foreground"}>
               {timer.linkedTask ? `🎯 ${timer.linkedTask.title}` : "Vincular tarefa (opcional)"}
             </span>
-            <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showTaskPicker ? "rotate-180" : ""}`} />
+            <ChevronDown size={16} className={`text-muted-foreground transition-transform duration-200 ${showTaskPicker ? "rotate-180" : ""}`} />
           </button>
           {showTaskPicker && (
             <div className="mt-2 fokko-card p-3 space-y-1 expand-in max-h-48 overflow-y-auto">
@@ -259,9 +257,9 @@ const FocusPage = () => {
         </div>
 
         {/* Timer Circle */}
-        <div className="relative mx-auto mb-8 flex h-64 w-64 items-center justify-center fade-up">
+        <div className="relative mx-auto mb-8 flex h-64 w-64 items-center justify-center focus-tool-enter" style={{ animationDelay: "0.2s" }}>
           <svg className="absolute inset-0" viewBox="0 0 256 256">
-            <circle cx="128" cy="128" r="116" fill="none" stroke="hsl(220 18% 15%)" strokeWidth="6" />
+            <circle cx="128" cy="128" r="116" fill="none" stroke={circleTrackColor} strokeWidth="6" />
           </svg>
           <div className="text-center">
             <div className="text-5xl font-bold tabular-nums text-foreground">
@@ -277,32 +275,32 @@ const FocusPage = () => {
         </div>
 
         {/* Start button */}
-        <div className="mb-8 flex items-center justify-center gap-5 fade-up">
-          <button onClick={timer.reset} className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-muted-foreground active:scale-95">
+        <div className="mb-8 flex items-center justify-center gap-5 focus-tool-enter" style={{ animationDelay: "0.25s" }}>
+          <button onClick={timer.reset} className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-muted-foreground active:scale-95 transition-transform">
             <RotateCcw size={22} />
           </button>
           <button
             onClick={timer.start}
-            className="flex items-center justify-center rounded-full fokko-gradient text-primary-foreground shadow-lg fokko-glow active:scale-95"
+            className="flex items-center justify-center rounded-full fokko-gradient text-primary-foreground shadow-lg fokko-glow active:scale-95 transition-transform"
             style={{ height: "72px", width: "72px" }}
           >
             <Play size={30} className="ml-1" />
           </button>
-          <button onClick={() => setShowGuide(!showGuide)} className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-muted-foreground active:scale-95">
+          <button onClick={() => setShowGuide(!showGuide)} className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-muted-foreground active:scale-95 transition-transform">
             <Info size={22} />
           </button>
         </div>
 
         {/* Timer presets (only for timer mode) */}
         {isTimer && (
-          <div className="mb-6 fade-up">
+          <div className="mb-6 focus-tool-enter" style={{ animationDelay: "0.3s" }}>
             <p className="mb-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Tempo de foco</p>
             <div className="flex justify-center gap-3 flex-wrap">
               {presets.map((min) => (
                 <button
                   key={min}
                   onClick={() => { timer.setGoalMinutes(min); setShowCustomInput(false); }}
-                  className={`rounded-xl px-5 py-3 text-sm font-medium active:scale-95 ${
+                  className={`rounded-xl px-5 py-3 text-sm font-medium active:scale-95 transition-all duration-200 ${
                     timer.goalMinutes === min && !showCustomInput ? "fokko-gradient text-primary-foreground shadow-md" : "bg-secondary text-muted-foreground"
                   }`}
                 >
@@ -311,13 +309,13 @@ const FocusPage = () => {
               ))}
               <button
                 onClick={() => setShowCustomInput(!showCustomInput)}
-                className={`rounded-xl px-4 py-3 text-sm font-medium active:scale-95 ${showCustomInput ? "fokko-gradient text-primary-foreground shadow-md" : "bg-secondary text-muted-foreground"}`}
+                className={`rounded-xl px-4 py-3 text-sm font-medium active:scale-95 transition-all duration-200 ${showCustomInput ? "fokko-gradient text-primary-foreground shadow-md" : "bg-secondary text-muted-foreground"}`}
               >
                 <Plus size={18} />
               </button>
             </div>
             {showCustomInput && (
-              <div className="mt-3 flex justify-center gap-2">
+              <div className="mt-3 flex justify-center gap-2 expand-in">
                 <input
                   type="number" min={1} max={180} value={customTime}
                   onChange={(e) => setCustomTime(e.target.value)}
@@ -349,17 +347,17 @@ const FocusPage = () => {
         )}
 
         {/* Cycle indicators */}
-        <div className="mb-6 fade-up">
+        <div className="mb-6 focus-tool-enter" style={{ animationDelay: "0.35s" }}>
           <p className="mb-2 text-center text-xs text-muted-foreground">Ciclos hoje: {cyclesCompleted}/4</p>
           <div className="flex justify-center gap-2">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={`h-3 w-3 rounded-full transition-all ${i <= cyclesCompleted ? "fokko-gradient" : "bg-secondary"}`} />
+              <div key={i} className={`h-3 w-3 rounded-full transition-all duration-300 ${i <= cyclesCompleted ? "fokko-gradient" : "bg-secondary"}`} />
             ))}
           </div>
         </div>
 
         {showGuide && (
-          <div className="fokko-card p-5 fade-up">
+          <div className="fokko-card p-5 expand-in">
             <h3 className="mb-2 text-sm font-semibold text-foreground">🍅 Técnica Pomodoro</h3>
             <ul className="space-y-2 text-xs text-muted-foreground">
               <li>1. Escolha uma tarefa para trabalhar</li>

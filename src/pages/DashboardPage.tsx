@@ -20,10 +20,7 @@ const isDark = () => !window.matchMedia("(prefers-color-scheme: light)").matches
 
 const DashboardPage = () => {
   const [focusOn, setFocusOn] = useState(isFocusEnabled);
-  const [dark, setDark] = useState(isDark);
-
-  // Re-check on render (reactive to system change would need a listener but this is fine for page loads)
-  useMemo(() => setDark(isDark()), []);
+  const [dark] = useState(isDark);
 
   const tasks = loadTasks();
   const allCategories = getAllCategories();
@@ -94,6 +91,8 @@ const DashboardPage = () => {
     const next = !focusOn;
     setFocusEnabled(next);
     setFocusOn(next);
+    // Notify BottomNav immediately
+    window.dispatchEvent(new Event("fokko-focus-changed"));
   };
 
   const gridStroke = dark ? "hsl(225, 14%, 14%)" : "hsl(210, 20%, 88%)";
@@ -207,7 +206,7 @@ const DashboardPage = () => {
                       innerRadius={45} outerRadius={75}
                       dataKey="value"
                       strokeWidth={2}
-                      stroke={dark ? "hsl(225, 20%, 5%)" : "hsl(210, 30%, 97%)"}
+                      stroke={dark ? "hsl(225, 20%, 5%)" : "hsl(0, 0%, 100%)"}
                     >
                       {pieData.map((entry) => (
                         <Cell key={entry.id} fill={categoryColors[entry.id] || "hsl(210, 50%, 50%)"} />
@@ -215,7 +214,7 @@ const DashboardPage = () => {
                     </Pie>
                     <Tooltip
                       contentStyle={chartTooltipStyle}
-                      formatter={(value, name, props) => {
+                      formatter={(value, name) => {
                         const item = pieData.find((d) => d.name === name);
                         return [`${value}/${item?.total ?? value}`, name];
                       }}

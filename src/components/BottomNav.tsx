@@ -1,11 +1,24 @@
 import { Home, Clock, BarChart3, History } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { isFocusEnabled } from "@/lib/fokko-data";
+import { useEffect, useState } from "react";
 
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const focusOn = isFocusEnabled();
+  const [focusOn, setFocusOn] = useState(isFocusEnabled);
+
+  // Re-read whenever location changes (navigating back from dashboard after toggle)
+  useEffect(() => {
+    setFocusOn(isFocusEnabled());
+  }, [location.pathname]);
+
+  // Also listen for storage events (same tab writes trigger re-read)
+  useEffect(() => {
+    const onStorage = () => setFocusOn(isFocusEnabled());
+    window.addEventListener("fokko-focus-changed", onStorage);
+    return () => window.removeEventListener("fokko-focus-changed", onStorage);
+  }, []);
 
   const navItems = [
     { icon: Home, label: "Início", path: "/" },

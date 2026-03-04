@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Check, Plus, Trash2, X, Star, Pin, PinOff, ChevronDown, ChevronUp } from "lucide-react";
 import type { Task, CategoryId, Category } from "@/lib/fokko-data";
 import { playTaskComplete, playTaskUncomplete, playPop } from "@/lib/sounds";
@@ -21,6 +21,8 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
   const [newTitle, setNewTitle] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [showPinFor, setShowPinFor] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const collapseRef = useRef<HTMLDivElement>(null);
 
   const categoryTasks = tasks.filter((t) => t.category === category.id);
   const sorted = [...categoryTasks].sort((a, b) => {
@@ -53,6 +55,19 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
   const handleToggleTask = (task: Task) => {
     task.completed ? playTaskUncomplete() : playTaskComplete();
     onToggle(task.id);
+  };
+
+  const handleDeleteTask = (id: string) => {
+    // Animate then delete
+    setDeletingIds((prev) => new Set(prev).add(id));
+    setTimeout(() => {
+      onDelete(id);
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 270);
   };
 
   return (
@@ -106,12 +121,17 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
           >
             <Plus size={20} />
           </button>
-          <button
-            onClick={() => setCollapsed((v) => !v)}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-secondary active:text-foreground"
-          >
-            {collapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-          </button>
+          {/* Hide collapse icon when no tasks */}
+          {total > 0 && (
+            <button
+              onClick={() => { playPop(); setCollapsed((v) => !v); }}
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-all duration-200 active:bg-secondary active:text-foreground"
+            >
+              <span className={`transition-transform duration-300 ${collapsed ? "rotate-0" : "rotate-180"}`}>
+                <ChevronDown size={18} />
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -128,17 +148,24 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
         />
       </div>
 
-      {/* Tasks */}
-      {!collapsed && (
+      {/* Tasks — animated collapse */}
+      <div
+        ref={collapseRef}
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{
+          maxHeight: collapsed ? "0px" : "2000px",
+          opacity: collapsed ? 0 : 1,
+        }}
+      >
         <div className="space-y-0.5">
           {sorted.map((task, index) => (
             <div
               key={task.id}
               className={`flex items-center gap-3 rounded-lg px-2 py-2.5 transition-all duration-300 cursor-pointer ${
-                task.completed ? "opacity-50" : "active:bg-secondary/50"
-              }`}
+                deletingIds.has(task.id) ? "task-delete pointer-events-none" : ""
+              } ${task.completed ? "opacity-50" : "active:bg-secondary/50"}`}
               style={{ animationDelay: `${index * 0.04}s` }}
-              onClick={() => handleToggleTask(task)}
+              onClick={() => !deletingIds.has(task.id) && handleToggleTask(task)}
             >
               <div
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 transition-all duration-300 ${
@@ -163,7 +190,7 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
                 </button>
               )}
               <button
-                onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+                onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
                 className="flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90"
               >
                 <Trash2 size={16} className="text-muted-foreground/50 active:text-destructive transition-colors" />
@@ -171,7 +198,7 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
             </div>
           ))}
         </div>
-      )}
+      </div>
 
       {/* Add task */}
       {adding && (

@@ -1,4 +1,4 @@
-import { getLocalDateString, loadCompletionHistory, loadFocusSessions } from "./fokko-data";
+import { getLocalDateString, loadCompletionHistory, loadFocusSessions, loadTasks } from "./fokko-data";
 
 const STREAK_KEY = "fokko-streak";
 
@@ -9,19 +9,18 @@ interface StreakData {
 }
 
 /**
- * A day counts as "active" if the user completed at least 1 task
- * OR had at least 1 focus session on that date.
+ * A day counts as "active" (for streak) only if ALL tasks were completed that day.
+ * Focus sessions alone no longer sustain the streak.
+ * If today has tasks and not all are completed, the streak does NOT include today.
  */
 const getActiveDates = (): Set<string> => {
   const dates = new Set<string>();
 
-  // From completion history (any entry means tasks existed that day)
+  // Only days where ALL tasks were completed count
   const history = loadCompletionHistory();
-  Object.keys(history).forEach((d) => dates.add(d));
-
-  // From focus sessions
-  const sessions = loadFocusSessions();
-  sessions.forEach((s) => dates.add(s.date));
+  Object.entries(history).forEach(([date, allDone]) => {
+    if (allDone) dates.add(date);
+  });
 
   return dates;
 };
@@ -42,8 +41,10 @@ export const calculateStreak = (): StreakData => {
     const today = getLocalDateString();
     const yesterday = getPreviousDate(today);
 
-    // Check if today is active
-    const todayActive = activeDates.has(today);
+    // Check today: if there are tasks and NOT all completed, today is NOT active
+    const todayTasks = loadTasks();
+    const allTodayDone = todayTasks.length > 0 && todayTasks.every((t) => t.completed);
+    const todayActive = allTodayDone || activeDates.has(today);
 
     // Start counting from today or yesterday
     let streak = 0;
@@ -57,7 +58,10 @@ export const calculateStreak = (): StreakData => {
     }
 
     // Count consecutive days backwards
-    while (activeDates.has(checkDate)) {
+    const checkDates = new Set([...activeDates]);
+    if (todayActive) checkDates.add(today);
+
+    while (checkDates.has(checkDate)) {
       streak++;
       checkDate = getPreviousDate(checkDate);
     }

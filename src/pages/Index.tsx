@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
-import { Sparkles, Plus, X, Flame } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Sparkles, Plus, X, Flame, PartyPopper } from "lucide-react";
 
 import TaskCategoryCard from "@/components/TaskCategoryCard";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   getAllCategories,
   loadTasks,
@@ -33,6 +34,24 @@ const Index = () => {
   const [newCatColor, setNewCatColor] = useState(getCustomColorOptions()[0].hsl);
   const [pinnedCategoryId, setPinnedCategoryId] = useState<string | null>(getPinnedCategory);
 
+  // Rotating quote
+  const [quoteIdx, setQuoteIdx] = useState(() => Math.floor(Math.random() * motivationalQuotes.length));
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQuoteIdx((i) => (i + 1) % motivationalQuotes.length);
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, []);
+  const quote = motivationalQuotes[quoteIdx];
+
+  // Celebration overlay
+  const [showCelebration, setShowCelebration] = useState(false);
+  const prevAllDoneRef = useRef(false);
+
+  // Delete confirmation
+  const [deleteTaskPending, setDeleteTaskPending] = useState<string | null>(null);
+  const [deleteCatPending, setDeleteCatPending] = useState<string | null>(null);
+
   useEffect(() => {
     saveTasks(tasks);
     saveCompletionSnapshot(tasks);
@@ -41,11 +60,18 @@ const Index = () => {
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length;
   const completionPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const allDone = totalCount > 0 && completedCount === totalCount;
 
-  const quote = useMemo(
-    () => motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)],
-    []
-  );
+  // Show celebration when all tasks just became done
+  useEffect(() => {
+    if (allDone && !prevAllDoneRef.current) {
+      setShowCelebration(true);
+      const t = setTimeout(() => setShowCelebration(false), 3500);
+      prevAllDoneRef.current = true;
+      return () => clearTimeout(t);
+    }
+    if (!allDone) prevAllDoneRef.current = false;
+  }, [allDone]);
 
   const streak = useMemo(() => calculateStreak(), [tasks]);
 
@@ -67,8 +93,27 @@ const Index = () => {
     setTasks((prev) => [...prev, newTask]);
   };
 
-  const deleteTask = (id: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+  // Delete task — ask confirmation
+  const requestDeleteTask = (id: string) => setDeleteTaskPending(id);
+  const confirmDeleteTask = () => {
+    if (deleteTaskPending) {
+      setTasks((prev) => prev.filter((t) => t.id !== deleteTaskPending));
+      setDeleteTaskPending(null);
+    }
+  };
+
+  // Delete category — ask confirmation
+  const requestDeleteCategory = (categoryId: string) => setDeleteCatPending(categoryId);
+  const confirmDeleteCategory = () => {
+    if (!deleteCatPending) return;
+    deleteCustomCategory(deleteCatPending);
+    setAllCategories((prev) => prev.filter((c) => c.id !== deleteCatPending));
+    setTasks((prev) => prev.filter((t) => t.category !== deleteCatPending));
+    if (pinnedCategoryId === deleteCatPending) {
+      setPinnedCategoryId(null);
+      setPinnedCategory(null);
+    }
+    setDeleteCatPending(null);
   };
 
   const handleAddCategory = () => {
@@ -77,16 +122,6 @@ const Index = () => {
       setAllCategories((prev) => [...prev, cat]);
       setNewCatName("");
       setShowAddCategory(false);
-    }
-  };
-
-  const handleDeleteCategory = (categoryId: string) => {
-    deleteCustomCategory(categoryId);
-    setAllCategories((prev) => prev.filter((c) => c.id !== categoryId));
-    setTasks((prev) => prev.filter((t) => t.category !== categoryId));
-    if (pinnedCategoryId === categoryId) {
-      setPinnedCategoryId(null);
-      setPinnedCategory(null);
     }
   };
 
@@ -112,8 +147,25 @@ const Index = () => {
   const circumference = 2 * Math.PI * circleRadius;
   const strokeDashoffset = circumference * (1 - completionPercent / 100);
 
+  // Determine circle track color based on color scheme
+  const isDark = !window.matchMedia("(prefers-color-scheme: light)").matches;
+  const circleTrackColor = isDark ? "hsl(220 18% 15%)" : "hsl(210 20% 88%)";
+
   return (
     <div className="min-h-screen bg-background pb-28">
+      {/* Celebration overlay */}
+      {showCelebration && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <div className="celebration-overlay flex flex-col items-center gap-4 rounded-3xl bg-card/95 border border-border/50 px-10 py-8 shadow-2xl mx-6 text-center">
+            <PartyPopper size={52} className="text-warning" />
+            <div>
+              <p className="text-xl font-bold text-foreground">Incrível! 🎉</p>
+              <p className="mt-1 text-sm text-muted-foreground">Todas as tarefas concluídas!</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto max-w-md px-5 pt-12">
         {/* Header */}
         <div className="mb-6 fade-up stagger-1">
@@ -122,7 +174,6 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-foreground">{greeting}! 👋</h1>
               <p className="mt-1 text-sm capitalize text-muted-foreground">{dateStr}</p>
             </div>
-            {/* Streak badge */}
             {streak.current > 0 && (
               <div className="flex items-center gap-1.5 rounded-full bg-warning/15 px-3 py-1.5 animate-scale-in">
                 <Flame size={16} className="text-warning" />
@@ -138,7 +189,7 @@ const Index = () => {
             <div className="flex items-center gap-4">
               <div className="relative h-24 w-24 shrink-0">
                 <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r={circleRadius} fill="none" stroke="hsl(220 18% 15%)" strokeWidth="7" />
+                  <circle cx="50" cy="50" r={circleRadius} fill="none" stroke={circleTrackColor} strokeWidth="7" />
                   <circle
                     cx="50" cy="50" r={circleRadius} fill="none"
                     stroke={completionPercent === 100 ? "hsl(142 70% 45%)" : "hsl(210 80% 55%)"}
@@ -153,9 +204,6 @@ const Index = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">{completedCount}/{totalCount} concluídas</p>
-                {completionPercent === 100 && totalCount > 0 && (
-                  <p className="mt-1 text-xs text-success font-medium animate-pop">🎉 Tudo concluído!</p>
-                )}
               </div>
             </div>
             {focusOn && (
@@ -168,7 +216,7 @@ const Index = () => {
         </div>
 
         {/* Quote */}
-        <div className="mb-5 flex items-start gap-3 rounded-xl bg-primary/8 px-4 py-3 fade-up stagger-3">
+        <div key={quoteIdx} className="mb-5 flex items-start gap-3 rounded-xl bg-primary/8 px-4 py-3 fade-up stagger-3">
           <Sparkles size={16} className="mt-0.5 shrink-0 text-primary" />
           <p className="text-xs leading-relaxed text-foreground/80">{quote}</p>
         </div>
@@ -179,9 +227,9 @@ const Index = () => {
             <div key={cat.id} className="slide-in-bottom" style={{ animationDelay: `${0.15 + index * 0.07}s` }}>
               <TaskCategoryCard
                 category={cat} tasks={tasks}
-                onToggle={toggleTask} onAdd={addTask} onDelete={deleteTask}
+                onToggle={toggleTask} onAdd={addTask} onDelete={requestDeleteTask}
                 onImportant={toggleImportant}
-                onDeleteCategory={cat.color ? () => handleDeleteCategory(cat.id) : undefined}
+                onDeleteCategory={cat.color ? () => requestDeleteCategory(cat.id) : undefined}
                 pinned={pinnedCategoryId === cat.id}
                 onPinToggle={() => handlePinToggle(cat.id)}
                 anyPinned={!!pinnedCategoryId}
@@ -231,6 +279,24 @@ const Index = () => {
           )}
         </div>
       </div>
+
+      {/* Delete task confirmation */}
+      <ConfirmDialog
+        open={!!deleteTaskPending}
+        title="Excluir tarefa?"
+        description="Esta tarefa será removida permanentemente."
+        onConfirm={confirmDeleteTask}
+        onCancel={() => setDeleteTaskPending(null)}
+      />
+
+      {/* Delete category confirmation */}
+      <ConfirmDialog
+        open={!!deleteCatPending}
+        title="Excluir categoria?"
+        description="A categoria e todas as suas tarefas serão removidas permanentemente."
+        onConfirm={confirmDeleteCategory}
+        onCancel={() => setDeleteCatPending(null)}
+      />
     </div>
   );
 };

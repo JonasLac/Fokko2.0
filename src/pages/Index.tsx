@@ -71,16 +71,34 @@ const Index = () => {
   const completionPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const allDone = totalCount > 0 && completedCount === totalCount;
 
-  // Show celebration when all tasks just became done
+  // Show celebration only once per day — persisted so navigating tabs won't replay it
   useEffect(() => {
-    if (allDone && !prevAllDoneRef.current) {
-      setShowCelebration(true);
-      const t = setTimeout(() => setShowCelebration(false), 3500);
-      prevAllDoneRef.current = true;
-      return () => clearTimeout(t);
+    if (!allDone) {
+      celebrationFiredRef.current = false;
+      return;
     }
-    if (!allDone) prevAllDoneRef.current = false;
+    const today = getLocalDateString();
+    const shownDate = localStorage.getItem(CELEBRATION_SHOWN_KEY);
+    if (shownDate === today || celebrationFiredRef.current) return;
+
+    celebrationFiredRef.current = true;
+    localStorage.setItem(CELEBRATION_SHOWN_KEY, today);
+    setShowCelebration(true);
+    const t = setTimeout(() => setShowCelebration(false), 3500);
+    return () => clearTimeout(t);
   }, [allDone]);
+
+  // Ask for notification permission once, then schedule daily reminder
+  useEffect(() => {
+    if (!hasAskedPermission()) {
+      setTimeout(async () => {
+        const result = await requestNotificationPermission();
+        if (result === "granted") scheduleDailyReminder(9, 0);
+      }, 3000);
+    } else {
+      scheduleDailyReminder(9, 0);
+    }
+  }, []);
 
   const streak = useMemo(() => calculateStreak(), [tasks]);
 

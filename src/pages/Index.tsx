@@ -17,11 +17,20 @@ import {
   isFocusEnabled,
   getPinnedCategory,
   setPinnedCategory,
+  getLocalDateString,
   type Task,
   type CategoryId,
   type Category,
 } from "@/lib/fokko-data";
 import { calculateStreak } from "@/lib/streak";
+import {
+  requestNotificationPermission,
+  hasAskedPermission,
+  scheduleDailyReminder,
+} from "@/lib/notifications";
+
+// Key to track which date the celebration was already shown
+const CELEBRATION_SHOWN_KEY = "fokko-celebration-shown-date";
 
 const Index = () => {
   const [tasks, setTasks] = useState<Task[]>(() => {

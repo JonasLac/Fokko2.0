@@ -52,7 +52,8 @@ export const scheduleDailyReminder = (hour = 9, minute = 0) => {
   if (!canNotify()) return;
 
   // Clear previous timer if exists
-  const existing = (window as Record<string, unknown>)[REMINDER_TIMER_KEY];
+  const w = window as unknown as Record<string, unknown>;
+  const existing = w[REMINDER_TIMER_KEY];
   if (typeof existing === "number") clearTimeout(existing);
 
   const now = new Date();

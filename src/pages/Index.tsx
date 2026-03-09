@@ -53,9 +53,9 @@ const Index = () => {
   }, []);
   const quote = motivationalQuotes[quoteIdx];
 
-  // Celebration overlay
+  // Celebration overlay — persisted per-day so it won't replay on tab switch
   const [showCelebration, setShowCelebration] = useState(false);
-  const prevAllDoneRef = useRef(false);
+  const celebrationFiredRef = useRef(false);
 
   // Delete confirmation
   const [deleteTaskPending, setDeleteTaskPending] = useState<string | null>(null);

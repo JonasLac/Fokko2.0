@@ -7,6 +7,7 @@ import {
   type FocusSessionRecord,
 } from "@/lib/fokko-data";
 import { playTimerDone } from "@/lib/sounds";
+import { notifyFocusComplete } from "@/lib/notifications";
 
 export type TimerMode = "timer" | "stopwatch";
 export type TimerStatus = "idle" | "running" | "paused" | "finished";
@@ -191,6 +192,7 @@ export const TimerProvider = ({ children }: { children: ReactNode }) => {
               // Timer finished
               setStatus("finished");
               playTimerDone();
+              notifyFocusComplete(goalMinutes);
             const now = new Date();
             const startedAt = startTimeRef.current || now;
             const actualMs = now.getTime() - startedAt.getTime();

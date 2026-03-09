@@ -71,7 +71,7 @@ export const scheduleDailyReminder = (hour = 9, minute = 0) => {
     scheduleDailyReminder(hour, minute);
   }, delay);
 
-  (window as Record<string, unknown>)[REMINDER_TIMER_KEY] = timerId;
+  (window as unknown as Record<string, unknown>)[REMINDER_TIMER_KEY] = timerId;
 };
 
 /** Notify that a focus session just finished */

@@ -7,6 +7,7 @@ import {
   type FocusSessionRecord,
 } from "@/lib/fokko-data";
 import { playTimerDone } from "@/lib/sounds";
+import { notifyFocusComplete } from "@/lib/notifications";
 
 export type TimerMode = "timer" | "stopwatch";
 export type TimerStatus = "idle" | "running" | "paused" | "finished";

@@ -192,6 +192,7 @@ export const TimerProvider = ({ children }: { children: ReactNode }) => {
               // Timer finished
               setStatus("finished");
               playTimerDone();
+              notifyFocusComplete(goalMinutes);
             const now = new Date();
             const startedAt = startTimeRef.current || now;
             const actualMs = now.getTime() - startedAt.getTime();

@@ -27,6 +27,8 @@ import {
   requestNotificationPermission,
   hasAskedPermission,
   scheduleDailyReminder,
+  scheduleTaskReminder,
+  cancelTaskReminder,
 } from "@/lib/notifications";
 
 // Key to track which date the celebration was already shown
@@ -100,7 +102,7 @@ const Index = () => {
     }
   }, []);
 
-  const streak = useMemo(() => calculateStreak(), [tasks]);
+  const streak = useMemo(() => calculateStreak(tasks), [tasks]);
 
   const now = new Date();
   const hour = now.getHours();
@@ -113,6 +115,17 @@ const Index = () => {
 
   const toggleImportant = (id: string) => {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, important: !t.important } : t)));
+  };
+
+  const setTaskReminder = (id: string, time: string | undefined) => {
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        if (time) scheduleTaskReminder(id, t.title, time);
+        else cancelTaskReminder(id);
+        return { ...t, reminderAt: time };
+      })
+    );
   };
 
   const addTask = (title: string, category: CategoryId) => {
@@ -256,6 +269,7 @@ const Index = () => {
                 category={cat} tasks={tasks}
                 onToggle={toggleTask} onAdd={addTask} onDelete={requestDeleteTask}
                 onImportant={toggleImportant}
+                onSetReminder={setTaskReminder}
                 onDeleteCategory={cat.color ? () => requestDeleteCategory(cat.id) : undefined}
                 pinned={pinnedCategoryId === cat.id}
                 onPinToggle={() => handlePinToggle(cat.id)}

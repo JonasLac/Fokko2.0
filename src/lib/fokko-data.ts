@@ -9,6 +9,7 @@ export interface Task {
   completed: boolean;
   important: boolean;
   createdAt: string;
+  reminderAt?: string; // "HH:MM" local time for important task notification
 }
 
 export interface FocusSessionRecord {

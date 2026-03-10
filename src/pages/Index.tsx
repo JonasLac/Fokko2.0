@@ -100,7 +100,7 @@ const Index = () => {
     }
   }, []);
 
-  const streak = useMemo(() => calculateStreak(), [tasks]);
+  const streak = useMemo(() => calculateStreak(tasks), [tasks]);
 
   const now = new Date();
   const hour = now.getHours();

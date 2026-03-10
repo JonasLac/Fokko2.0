@@ -27,6 +27,8 @@ import {
   requestNotificationPermission,
   hasAskedPermission,
   scheduleDailyReminder,
+  scheduleTaskReminder,
+  cancelTaskReminder,
 } from "@/lib/notifications";
 
 // Key to track which date the celebration was already shown

@@ -117,6 +117,17 @@ const Index = () => {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, important: !t.important } : t)));
   };
 
+  const setTaskReminder = (id: string, time: string | undefined) => {
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        if (time) scheduleTaskReminder(id, t.title, time);
+        else cancelTaskReminder(id);
+        return { ...t, reminderAt: time };
+      })
+    );
+  };
+
   const addTask = (title: string, category: CategoryId) => {
     const newTask: Task = { id: Date.now().toString(), title, category, completed: false, important: false, createdAt: new Date().toISOString() };
     setTasks((prev) => [...prev, newTask]);

@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
-import { Check, Plus, Trash2, X, Star, Pin, PinOff, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, Plus, Trash2, X, Star, Pin, PinOff, ChevronDown, Bell, BellOff } from "lucide-react";
 import type { Task, CategoryId, Category } from "@/lib/fokko-data";
 import { playTaskComplete, playTaskUncomplete, playPop } from "@/lib/sounds";
+import { canNotify } from "@/lib/notifications";
 
 interface TaskCategoryCardProps {
   category: Category;
@@ -10,18 +11,24 @@ interface TaskCategoryCardProps {
   onAdd: (title: string, category: CategoryId) => void;
   onDelete: (id: string) => void;
   onImportant: (id: string) => void;
+  onSetReminder: (id: string, time: string | undefined) => void;
   onDeleteCategory?: () => void;
   pinned?: boolean;
   onPinToggle?: () => void;
   anyPinned?: boolean;
 }
 
-const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImportant, onDeleteCategory, pinned, onPinToggle, anyPinned }: TaskCategoryCardProps) => {
+const TaskCategoryCard = ({
+  category, tasks, onToggle, onAdd, onDelete, onImportant, onSetReminder,
+  onDeleteCategory, pinned, onPinToggle, anyPinned,
+}: TaskCategoryCardProps) => {
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [showPinFor, setShowPinFor] = useState(false);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  // Task id for which the reminder time picker is open
+  const [reminderPickerId, setReminderPickerId] = useState<string | null>(null);
   const collapseRef = useRef<HTMLDivElement>(null);
 
   const categoryTasks = tasks.filter((t) => t.category === category.id);
@@ -68,6 +75,27 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
         return next;
       });
     }, 270);
+  };
+
+  const handleImportantToggle = (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (task.important) {
+      // Unmark: also clear reminder
+      onImportant(task.id);
+      onSetReminder(task.id, undefined);
+      setReminderPickerId(null);
+    } else {
+      onImportant(task.id);
+      // Show reminder picker if notifications are available
+      if (canNotify()) {
+        setReminderPickerId(task.id);
+      }
+    }
+  };
+
+  const handleSetReminder = (taskId: string, time: string) => {
+    onSetReminder(taskId, time || undefined);
+    setReminderPickerId(null);
   };
 
   return (
@@ -159,42 +187,88 @@ const TaskCategoryCard = ({ category, tasks, onToggle, onAdd, onDelete, onImport
       >
         <div className="space-y-0.5">
           {sorted.map((task, index) => (
-            <div
-              key={task.id}
-              className={`flex items-center gap-3 rounded-lg px-2 py-2.5 transition-all duration-300 cursor-pointer ${
-                deletingIds.has(task.id) ? "task-delete pointer-events-none" : ""
-              } ${task.completed ? "opacity-50" : "active:bg-secondary/50"}`}
-              style={{ animationDelay: `${index * 0.04}s` }}
-              onClick={() => !deletingIds.has(task.id) && handleToggleTask(task)}
-            >
+            <div key={task.id}>
               <div
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 transition-all duration-300 ${
-                  task.completed
-                    ? "border-primary bg-primary"
-                    : "border-muted-foreground/30"
-                }`}
+                className={`flex items-center gap-3 rounded-lg px-2 py-2.5 transition-all duration-300 cursor-pointer ${
+                  deletingIds.has(task.id) ? "task-delete pointer-events-none" : ""
+                } ${task.completed ? "opacity-50" : "active:bg-secondary/50"}`}
+                style={{ animationDelay: `${index * 0.04}s` }}
+                onClick={() => !deletingIds.has(task.id) && handleToggleTask(task)}
               >
-                {task.completed && <Check size={14} className="text-primary-foreground check-bounce" />}
-              </div>
-              <span className={`flex-1 text-sm transition-all duration-300 ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                {task.title}
-              </span>
-              {total > 1 && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onImportant(task.id); }}
-                  className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90 ${
-                    task.important ? "text-warning" : "text-muted-foreground/40 active:text-warning"
+                <div
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 transition-all duration-300 ${
+                    task.completed
+                      ? "border-primary bg-primary"
+                      : "border-muted-foreground/30"
                   }`}
                 >
-                  <Star size={15} className={task.important ? "fill-warning" : ""} />
+                  {task.completed && <Check size={14} className="text-primary-foreground check-bounce" />}
+                </div>
+                <span className={`flex-1 text-sm transition-all duration-300 ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  {task.title}
+                </span>
+                {/* Reminder bell — shown when task is important and notifications available */}
+                {task.important && canNotify() && !task.completed && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setReminderPickerId(reminderPickerId === task.id ? null : task.id);
+                    }}
+                    className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90 ${
+                      task.reminderAt ? "text-primary" : "text-muted-foreground/40 active:text-primary"
+                    }`}
+                    title={task.reminderAt ? `Lembrete: ${task.reminderAt}` : "Definir lembrete"}
+                  >
+                    {task.reminderAt ? <Bell size={14} className="fill-primary/20" /> : <Bell size={14} />}
+                  </button>
+                )}
+                {total > 1 && (
+                  <button
+                    onClick={(e) => handleImportantToggle(task, e)}
+                    className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90 ${
+                      task.important ? "text-warning" : "text-muted-foreground/40 active:text-warning"
+                    }`}
+                  >
+                    <Star size={15} className={task.important ? "fill-warning" : ""} />
+                  </button>
+                )}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90"
+                >
+                  <Trash2 size={16} className="text-muted-foreground/50 active:text-destructive transition-colors" />
                 </button>
-              )}
-              <button
-                onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
-                className="flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 active:scale-90"
+              </div>
+
+              {/* Reminder time picker — inline, animated */}
+              <div
+                className="overflow-hidden transition-all duration-300 ease-in-out"
+                style={{
+                  maxHeight: reminderPickerId === task.id ? "80px" : "0px",
+                  opacity: reminderPickerId === task.id ? 1 : 0,
+                }}
               >
-                <Trash2 size={16} className="text-muted-foreground/50 active:text-destructive transition-colors" />
-              </button>
+                <div className="flex items-center gap-2 px-2 pb-2 pt-1">
+                  <Bell size={14} className="text-primary shrink-0" />
+                  <p className="text-xs text-muted-foreground flex-1">Lembrete às:</p>
+                  <input
+                    type="time"
+                    defaultValue={task.reminderAt || ""}
+                    className="rounded-lg border border-border bg-secondary px-2 py-1 text-xs text-foreground outline-none focus:border-primary transition-colors"
+                    onChange={(e) => {/* controlled on confirm */}}
+                    onBlur={(e) => handleSetReminder(task.id, e.target.value)}
+                  />
+                  {task.reminderAt && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleSetReminder(task.id, ""); }}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground active:text-destructive transition-colors"
+                      title="Remover lembrete"
+                    >
+                      <BellOff size={13} />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
         </div>

@@ -1,4 +1,4 @@
-import { getLocalDateString, loadCompletionHistory, loadFocusSessions, loadTasks } from "./fokko-data";
+import { getLocalDateString, loadCompletionHistory, type Task } from "./fokko-data";
 
 const STREAK_KEY = "fokko-streak";
 
@@ -10,18 +10,14 @@ interface StreakData {
 
 /**
  * A day counts as "active" (for streak) only if ALL tasks were completed that day.
- * Focus sessions alone no longer sustain the streak.
- * If today has tasks and not all are completed, the streak does NOT include today.
+ * Accepts live tasks array so the calculation is always in sync with React state.
  */
 const getActiveDates = (): Set<string> => {
   const dates = new Set<string>();
-
-  // Only days where ALL tasks were completed count
   const history = loadCompletionHistory();
   Object.entries(history).forEach(([date, allDone]) => {
     if (allDone) dates.add(date);
   });
-
   return dates;
 };
 
@@ -32,7 +28,7 @@ const getPreviousDate = (dateStr: string): string => {
   return getLocalDateString(date);
 };
 
-export const calculateStreak = (): StreakData => {
+export const calculateStreak = (liveTasks?: Task[]): StreakData => {
   try {
     const raw = localStorage.getItem(STREAK_KEY);
     const saved: StreakData | null = raw ? JSON.parse(raw) : null;
@@ -41,14 +37,12 @@ export const calculateStreak = (): StreakData => {
     const today = getLocalDateString();
     const yesterday = getPreviousDate(today);
 
-    // Check today: if there are tasks and NOT all completed, today is NOT active
-    const todayTasks = loadTasks();
-    const allTodayDone = todayTasks.length > 0 && todayTasks.every((t) => t.completed);
-    const todayActive = allTodayDone || activeDates.has(today);
+    // Use live tasks when provided (avoids stale localStorage read during React renders)
+    const allTodayDone = liveTasks
+      ? liveTasks.length > 0 && liveTasks.every((t) => t.completed)
+      : false;
 
-    // Start counting from today or yesterday
-    let streak = 0;
-    let checkDate = todayActive ? today : yesterday;
+    const todayActive = allTodayDone || activeDates.has(today);
 
     // If neither today nor yesterday is active, streak is 0
     if (!todayActive && !activeDates.has(yesterday)) {
@@ -58,6 +52,9 @@ export const calculateStreak = (): StreakData => {
     }
 
     // Count consecutive days backwards
+    let streak = 0;
+    let checkDate = todayActive ? today : yesterday;
+
     const checkDates = new Set([...activeDates]);
     if (todayActive) checkDates.add(today);
 

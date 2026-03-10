@@ -81,3 +81,48 @@ export const notifyFocusComplete = (minutes: number) => {
     `Você focou por ${minutes} minuto${minutes !== 1 ? "s" : ""}. Faça uma pausa merecida!`,
   );
 };
+
+// ── Important task reminders ──
+
+/** Key prefix for per-task reminder timers stored on window */
+const TASK_REMINDER_PREFIX = "__fokko_task_reminder_";
+
+/** Schedule a notification for an important task at a specific time (HH:MM).
+ *  Fires today if the time hasn't passed, otherwise tomorrow.
+ */
+export const scheduleTaskReminder = (taskId: string, taskTitle: string, timeStr: string) => {
+  if (!canNotify()) return;
+
+  cancelTaskReminder(taskId); // clear previous if any
+
+  const [hStr, mStr] = timeStr.split(":");
+  const hour = parseInt(hStr, 10);
+  const minute = parseInt(mStr, 10);
+  if (isNaN(hour) || isNaN(minute)) return;
+
+  const now = new Date();
+  const fire = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0, 0);
+  if (fire <= now) fire.setDate(fire.getDate() + 1);
+
+  const delay = fire.getTime() - now.getTime();
+
+  const timerId = window.setTimeout(() => {
+    showNotification(
+      `⭐ Tarefa importante: ${taskTitle}`,
+      "Não esqueça desta tarefa marcada como importante!",
+    );
+  }, delay);
+
+  (window as unknown as Record<string, unknown>)[`${TASK_REMINDER_PREFIX}${taskId}`] = timerId;
+};
+
+/** Cancel a previously scheduled task reminder */
+export const cancelTaskReminder = (taskId: string) => {
+  const w = window as unknown as Record<string, unknown>;
+  const key = `${TASK_REMINDER_PREFIX}${taskId}`;
+  const existing = w[key];
+  if (typeof existing === "number") {
+    clearTimeout(existing);
+    delete w[key];
+  }
+};

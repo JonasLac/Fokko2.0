@@ -269,6 +269,7 @@ const Index = () => {
                 category={cat} tasks={tasks}
                 onToggle={toggleTask} onAdd={addTask} onDelete={requestDeleteTask}
                 onImportant={toggleImportant}
+                onSetReminder={setTaskReminder}
                 onDeleteCategory={cat.color ? () => requestDeleteCategory(cat.id) : undefined}
                 pinned={pinnedCategoryId === cat.id}
                 onPinToggle={() => handlePinToggle(cat.id)}
